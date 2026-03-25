@@ -1,7 +1,10 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TicketTypeData } from "@/features/events/types";
+import { formatEventDayMonthEs } from "@/lib/utils/date";
+import Link from "next/link";
+import { getEvents } from "@/features/events/data";
+import Image from "next/image";
 
 type TicketCardProps = {
   ticket: TicketTypeData;
@@ -9,24 +12,53 @@ type TicketCardProps = {
 
 export function TicketCard({ ticket }: TicketCardProps): JSX.Element {
   const available = ticket.inventory - ticket.sold;
+  const event = getEvents().find((e) => e.id === ticket.eventId);
+
+  const packageTone =
+    ticket.label === "VIP"
+      ? "text-[var(--accent)]"
+      : ticket.label === "PLATINO"
+        ? "text-[var(--accent)]"
+        : ticket.label === "GENERAL"
+          ? "text-emerald-500"
+          : "text-[var(--primary)]";
 
   return (
-    <Card>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900">{ticket.name}</h3>
-          <Badge tone={available > 0 ? "success" : "danger"}>{ticket.label}</Badge>
+    <Card className="flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-white">
+      <div className="relative h-44 w-full md:h-48">
+        <Image
+          src="/assets/imagenes/BannerEventoTaboga.png"
+          alt={`Banner ${ticket.label}`}
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-transparent" />
+      </div>
+
+      <CardContent className="flex flex-col space-y-4 p-5">
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-xs font-black tracking-widest text-[var(--epr-blue-800)]">
+              {event?.startAt ? formatEventDayMonthEs(event.startAt) : "FECHA"}
+            </p>
+            <h3 className="text-base font-black text-slate-900">{ticket.name}</h3>
+          </div>
+
+          <div className="shrink-0 text-right">
+            <p className={`text-sm font-black uppercase ${packageTone}`}>{ticket.label}</p>
+            <p className="text-2xl font-black text-[var(--accent)] sm:text-3xl">${ticket.price.toFixed(0)} </p>
+          </div>
         </div>
-        <p className="text-2xl font-black text-[var(--primary)]">${ticket.price.toFixed(2)}</p>
-        <ul className="space-y-1 text-sm text-slate-600">
-          {ticket.benefits.map((benefit) => (
-            <li key={benefit}>- {benefit}</li>
-          ))}
-        </ul>
-        <p className="text-xs font-medium text-slate-500">Cupos disponibles: {available}</p>
-        <Button className="w-full" disabled={available <= 0}>
-          {available > 0 ? "Reservar paquete" : "Agotado"}
-        </Button>
+
+        <p className="text-sm text-slate-600">{ticket.benefits.slice(0, 2).join(" + ")}</p>
+
+        <div className="flex items-center justify-between gap-3">
+          <Badge tone={available > 0 ? "success" : "danger"}>{available > 0 ? "Disponible" : "Agotado"}</Badge>
+
+          <Link href={`/packages/${ticket.id}`} className="text-sm font-semibold text-[var(--primary)] hover:underline">
+            Acceso al evento
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );

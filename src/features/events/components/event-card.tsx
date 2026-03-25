@@ -13,13 +13,13 @@ type EventCardProps = {
 
 export function EventCard({ event }: EventCardProps): JSX.Element {
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden rounded-2xl border border-[var(--border)]">
       <div className="relative h-44 w-full">
         <Image src={event.bannerUrl} alt={event.title} fill className="object-cover" />
       </div>
       <CardContent className="space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-lg font-bold text-slate-900">{event.title}</h3>
+          <h3 className="text-lg font-bold text-[var(--epr-blue-800)]">{event.title}</h3>
           <Badge tone={event.status === "published" ? "success" : "warning"}>{event.status}</Badge>
         </div>
         <p className="text-sm text-slate-600">{event.shortDescription}</p>
