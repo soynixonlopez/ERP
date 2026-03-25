@@ -1,0 +1,144 @@
+You are building a production-grade, multi-tenant event reservation platform that must be scalable, secure, and ready to evolve into a SaaS product for multiple event producers.
+
+## Core stack
+- Next.js App Router
+- TypeScript strict mode
+- Tailwind CSS
+- shadcn/ui
+- Supabase Auth
+- Supabase Postgres
+- Supabase Storage
+- Zod
+- React Hook Form
+- TanStack Table
+- Vercel deployment
+
+## Architecture rules
+1. Always design the system as multi-tenant.
+2. Every business table must include organization_id.
+3. Never implement critical business logic only on the client.
+4. All writes must happen through server-side validated flows.
+5. Payment confirmation must be webhook-driven or server-verified.
+6. Inventory deduction must happen in SQL transactions or RPC functions.
+7. Reservation status and payment status must always be separate.
+8. Use feature-based architecture, not random shared folders full of mixed code.
+9. All modules must be extensible for future SaaS commercialization.
+10. Build for maintainability, not quick hacks.
+
+## Code quality rules
+11. Use strict TypeScript.
+12. Avoid any unless absolutely unavoidable.
+13. Prefer readable, small, composable functions.
+14. Never duplicate business logic across layers.
+15. Keep domain logic in services, not inside UI components.
+16. Keep database access isolated in repository/data layers when needed.
+17. Use enums/constants for statuses and permissions.
+18. Always handle loading, success, empty, and error states.
+19. Create reusable components with clear props and typed interfaces.
+20. Favor server components by default.
+
+## UI rules
+21. The UI must be mobile-first and fully responsive.
+22. The design should reflect an event reservation product:
+   - clean cards
+   - strong CTA buttons
+   - simple forms
+   - good spacing
+   - accessible typography
+23. Use the brand feel inspired by:
+   - primary blue
+   - accent yellow
+   - light neutral backgrounds
+24. Public pages should feel polished and conversion-oriented.
+25. Admin pages should feel efficient, readable, and data-focused.
+
+## Supabase rules
+26. Use Supabase Auth correctly.
+27. Enforce RLS on all sensitive business tables.
+28. Never expose service_role keys to the client.
+29. Create proper indexes for foreign keys and common filters.
+30. Include created_at and updated_at in all business tables.
+31. Use triggers for updated_at.
+32. Add helpful SQL comments where useful.
+33. Prefer migrations that are clear and safe to evolve.
+
+## Security rules
+34. Enforce RBAC on the server.
+35. Enforce RLS in the database.
+36. Add rate limiting to login, register, checkout, and webhook routes.
+37. Sanitize user-provided content.
+38. Verify webhook signatures.
+39. Do not trust client-provided pricing, totals, or inventory.
+40. Recompute sensitive values on the server.
+
+## Admin rules
+41. Admin tables must support:
+   - pagination
+   - filtering
+   - searching
+   - sorting
+   - export when relevant
+42. Admin search should support:
+   - customer name
+   - email
+   - document ID
+   - reservation number
+   - event name
+43. Dashboards must show meaningful metrics, not dummy placeholders.
+44. Destructive actions must require confirmation.
+45. Important admin actions should be logged in audit_logs.
+
+## Reservation and payment rules
+46. Reservations must support statuses:
+   - draft
+   - pending_payment
+   - confirmed
+   - cancelled
+   - expired
+   - refunded
+47. Payments must support statuses:
+   - pending
+   - processing
+   - paid
+   - failed
+   - refunded
+   - partially_refunded
+48. Never mark a reservation as confirmed before payment is verified.
+49. Implement idempotency for payment webhooks and reservation creation.
+50. Expirable pending reservations should be supported.
+
+## Product rules
+51. The project must be easy to extend with:
+   - coupons
+   - QR check-in
+   - seat maps
+   - add-ons
+   - multiple payment providers
+   - multiple organizations
+   - subscription plans
+   - feature flags
+52. Avoid hardcoding single-event or single-client assumptions.
+53. Keep the domain generic enough to become a reusable SaaS.
+
+## Output rules
+54. When generating code, provide complete files, not snippets unless asked.
+55. When generating SQL, include constraints, indexes, enums, and triggers.
+56. When generating forms, include validation schemas.
+57. When generating APIs, include validation, error handling, and typed responses.
+58. When generating tables or dashboards, use realistic sample data structures.
+59. Avoid placeholder implementations if a proper implementation can be generated.
+60. Always prefer production-grade solutions over shortcuts.
+
+## Folder organization rules
+61. Organize code by feature/domain.
+62. Keep auth, events, tickets, reservations, payments, customers, reports, and admin in separate modules.
+63. Shared UI components should be generic and reusable.
+64. Do not create bloated utility files with unrelated logic.
+65. Keep naming consistent, explicit, and scalable.
+
+## Final behavior
+66. Think like a senior SaaS architect and product engineer.
+67. Optimize for scalability, security, and maintainability.
+68. Do not make assumptions that break multi-tenancy.
+69. Do not generate fragile code.
+70. Build the system as if it will be sold commercially.
