@@ -42,3 +42,39 @@ export function mapSignUpError(error: AuthError): string {
   // Mensaje original suele ser claro en inglés; lo mostramos para depuración sin ocultar la causa
   return `No fue posible crear la cuenta: ${error.message}`;
 }
+
+export function isEmailNotConfirmedError(error: AuthError): boolean {
+  const m = (error.message ?? "").toLowerCase();
+  const code = String((error as { code?: string }).code ?? "").toLowerCase();
+  return code === "email_not_confirmed" || m.includes("email not confirmed");
+}
+
+/**
+ * Errores comunes de signIn (incluye correo sin confirmar).
+ */
+export function mapSignInError(error: AuthError): string {
+  const m = (error.message ?? "").toLowerCase();
+  const code = String((error as { code?: string }).code ?? "").toLowerCase();
+
+  if (code === "email_not_confirmed" || m.includes("email not confirmed")) {
+    return "Tu cuenta aún no está verificada para iniciar con contraseña. Revisa tu bandeja (y spam) o usa «Reenviar correo» abajo. Tras abrir el enlace del correo, podrás entrar.";
+  }
+
+  if (
+    code === "invalid_credentials" ||
+    m.includes("invalid login credentials") ||
+    m.includes("invalid_credentials")
+  ) {
+    return "Correo o contraseña incorrectos. Si acabas de registrarte, confirma el correo primero.";
+  }
+
+  if (m.includes("email not found") || m.includes("user not found")) {
+    return "No hay una cuenta con ese correo. Regístrate o revisa el correo escrito.";
+  }
+
+  if (m.includes("too many requests") || m.includes("rate limit")) {
+    return "Demasiados intentos. Espera unos minutos e intenta de nuevo.";
+  }
+
+  return `No fue posible iniciar sesión: ${error.message}`;
+}

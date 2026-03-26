@@ -46,7 +46,22 @@ export function CheckoutForm({
       body: JSON.stringify(values)
     });
 
-    const payload = (await response.json()) as { error?: string; reservationNumber?: string };
+    const raw = await response.text();
+    let payload: { error?: string; reservationNumber?: string } = {};
+    if (raw.trim()) {
+      try {
+        payload = JSON.parse(raw) as typeof payload;
+      } catch {
+        setServerError(
+          `Respuesta invalida del servidor (${response.status}). Recarga la página e intenta de nuevo.`
+        );
+        return;
+      }
+    } else if (!response.ok) {
+      setServerError(`Error del servidor (${response.status}). Intenta de nuevo.`);
+      return;
+    }
+
     if (!response.ok) {
       setServerError(payload.error ?? "Error al procesar la reserva");
       return;

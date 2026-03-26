@@ -1,23 +1,29 @@
 "use client";
 
 import { useActionState } from "react";
-import { signInAction } from "@/features/auth/actions/auth-actions";
+import {
+  resendSignupConfirmationAction,
+  signInAction,
+  type AuthActionState
+} from "@/features/auth/actions/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/cn";
 import { Lock, UserRound } from "lucide-react";
 
-const initialState = {
-  error: undefined as string | undefined
-};
+const initialSignInState: AuthActionState = {};
+const initialResendState = { error: undefined as string | undefined, ok: false as boolean };
 
 type SignInFormProps = {
   variant?: "default" | "standalone";
 };
 
 export function SignInForm({ variant = "default" }: SignInFormProps): JSX.Element {
-  const [state, action, pending] = useActionState(signInAction, initialState);
-
+  const [state, action, pending] = useActionState(signInAction, initialSignInState);
+  const [resendState, resendAction, resendPending] = useActionState(
+    resendSignupConfirmationAction,
+    initialResendState
+  );
   if (variant === "standalone") {
     return (
       <form action={action} className="space-y-4">
@@ -58,6 +64,28 @@ export function SignInForm({ variant = "default" }: SignInFormProps): JSX.Elemen
           />
         </div>
         {state.error ? <p className="text-center text-sm font-medium text-red-600">{state.error}</p> : null}
+        {state.hint === "resend" ? (
+          <div className="space-y-2">
+            <Button
+              type="submit"
+              formAction={resendAction}
+              disabled={resendPending}
+              variant="secondary"
+              size="lg"
+              className="h-12 w-full rounded-xl border-2 border-[var(--epr-blue-800)] text-base font-semibold text-[var(--epr-blue-800)]"
+            >
+              {resendPending ? "Enviando..." : "Reenviar correo de confirmación"}
+            </Button>
+            {resendState.ok ? (
+              <p className="text-center text-sm font-medium text-emerald-700">
+                Listo. Revisa tu bandeja (y spam) y abre el enlace del correo; luego podrás iniciar sesión.
+              </p>
+            ) : null}
+            {resendState.error ? (
+              <p className="text-center text-sm font-medium text-red-600">{resendState.error}</p>
+            ) : null}
+          </div>
+        ) : null}
         <Button
           type="submit"
           disabled={pending}
@@ -109,6 +137,25 @@ export function SignInForm({ variant = "default" }: SignInFormProps): JSX.Elemen
         </div>
       </div>
       {state.error ? <p className="text-sm font-medium text-red-600">{state.error}</p> : null}
+      {state.hint === "resend" ? (
+        <div className="space-y-2">
+          <Button
+            type="submit"
+            formAction={resendAction}
+            disabled={resendPending}
+            variant="secondary"
+            className="w-full"
+          >
+            {resendPending ? "Enviando..." : "Reenviar correo de confirmación"}
+          </Button>
+          {resendState.ok ? (
+            <p className="text-sm font-medium text-emerald-700">
+              Listo. Revisa tu bandeja (y spam) y abre el enlace del correo; luego podrás iniciar sesión.
+            </p>
+          ) : null}
+          {resendState.error ? <p className="text-sm font-medium text-red-600">{resendState.error}</p> : null}
+        </div>
+      ) : null}
       <Button className="w-full" disabled={pending}>
         {pending ? "Ingresando..." : "Iniciar sesion"}
       </Button>
