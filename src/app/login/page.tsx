@@ -37,7 +37,7 @@ export default function LoginPage(): JSX.Element {
 
           <div className="overflow-hidden rounded-t-2xl border border-slate-200/90 bg-white shadow-sm">
             <div className="bg-[var(--epr-blue-800)] py-3.5 text-center">
-              <h1 className="text-base font-bold text-white">Iniciar sesión</h1>
+              <h1 className="!text-center text-base font-bold text-white">Iniciar sesión</h1>
             </div>
             <div className="bg-white px-5 pb-5 pt-6">
               <SignInForm variant="standalone" />

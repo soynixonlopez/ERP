@@ -1,11 +1,11 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { EPR_ORGANIZATION_ID } from "@/features/events/data";
 import { AdminReservationsTable, type AdminReservationRow } from "@/features/admin/components/admin-reservations-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminReservationsPage(): Promise<JSX.Element> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   const { data } = await supabase
     .from("reservations")

@@ -24,7 +24,7 @@ export default function RegisterPage(): JSX.Element {
       <div className="flex flex-1 flex-col items-center px-4 pb-12 pt-20 sm:px-6">
         <div className="w-full max-w-[400px] space-y-8">
           <header className="text-center">
-            <h1 className="text-3xl font-black tracking-tight text-[var(--epr-blue-800)] sm:text-4xl">
+            <h1 className="!text-center text-3xl font-black tracking-tight text-[var(--epr-blue-800)] sm:text-4xl">
               REGISTRARME
             </h1>
             <div className="mx-auto mt-2 h-1 w-32 bg-[var(--accent)]" />

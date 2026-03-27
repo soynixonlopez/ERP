@@ -11,32 +11,30 @@ export const mockEvents: EventCardData[] = [
   {
     id: EVENT_SUMMER_BEATS_ID,
     organizationId: EPR_ORGANIZATION_ID,
-    title: "Summer Beats 2026",
-    slug: "summer-beats-2026",
-    shortDescription: "Festival urbano con artistas internacionales y experiencia VIP.",
+    title: "Vallenato y Salsa en Taboga 2026",
+    slug: "vallenato-salsa-taboga-2026",
+    shortDescription: "Evento oficial activo con acceso por paquetes y reservas abiertas.",
     description:
-      "Un evento premium con tarima principal, zona lounge, experiencias gastronómicas y acceso por franjas horarias.",
-    bannerUrl:
-      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80",
-    location: "Amador Convention Center, Ciudad de Panama",
-    startAt: "2026-06-12T20:00:00.000Z",
-    endAt: "2026-06-13T04:00:00.000Z",
+      "Disfruta dos dias de musica en vivo frente al mar con experiencias VIP, crucero y acceso general en Taboga.",
+    bannerUrl: "/assets/imagenes/BannerEventoTaboga.png",
+    location: "Isla Perico, Calzada de Amador",
+    startAt: "2026-04-04T14:00:00.000Z",
+    endAt: "2026-04-05T23:00:00.000Z",
     status: "published"
   },
   {
     id: EVENT_BUSINESS_SUMMIT_ID,
     organizationId: EPR_ORGANIZATION_ID,
-    title: "EPR Business Summit",
-    slug: "epr-business-summit",
-    shortDescription: "Networking, charlas y workshops para lideres empresariales.",
+    title: "Próximo evento EPR",
+    slug: "proximo-evento-epr",
+    shortDescription: "Estamos preparando un nuevo evento tropical para ti.",
     description:
-      "Cumbre empresarial con espacios de mentorias, sesiones premium y ruedas de negocio segmentadas.",
-    bannerUrl:
-      "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
-    location: "Centro de Convenciones Atlapa",
-    startAt: "2026-07-03T13:00:00.000Z",
-    endAt: "2026-07-03T22:00:00.000Z",
-    status: "published"
+      "Muy pronto anunciaremos artistas, fecha y paquetes del siguiente gran evento. Activa tus notificaciones para enterarte primero.",
+    bannerUrl: "",
+    location: "Próximamente",
+    startAt: "2026-08-01T18:00:00.000Z",
+    endAt: "2026-08-01T23:00:00.000Z",
+    status: "upcoming"
   }
 ];
 
@@ -46,52 +44,69 @@ export const mockTicketTypes: TicketTypeData[] = [
     id: "3f3f3f3f-3f3f-3f3f-3f3f-3f3f3f3f3f01",
     organizationId: EPR_ORGANIZATION_ID,
     eventId: EVENT_SUMMER_BEATS_ID,
-    name: "Experiencia VIP Backstage",
-    label: "VIP",
-    price: 180,
+    name: "Paquete 1 - Platino Crucero",
+    label: "PLATINO",
+    price: 75,
     currency: "USD",
-    benefits: ["Fila rapida", "Open bar premium", "Zona backstage"],
-    inventory: 300,
-    sold: 120,
+    benefits: [
+      "Transporte ida y vuelta en el crucero Majestic + silla + sombrilla en la playa + acceso Platino al evento (opcion de subir a VIP por $10 adicionales)"
+    ],
+    inventory: 800,
+    sold: 210,
     visibility: "public"
   },
   {
     id: "3f3f3f3f-3f3f-3f3f-3f3f-3f3f3f3f3f02",
     organizationId: EPR_ORGANIZATION_ID,
     eventId: EVENT_SUMMER_BEATS_ID,
-    name: "Entrada General",
-    label: "GENERAL",
-    price: 55,
+    name: "Paquete 2 - VIP Crucero",
+    label: "VIP",
+    price: 99,
     currency: "USD",
-    benefits: ["Acceso general", "Zona food court"],
-    inventory: 3000,
-    sold: 1450,
+    benefits: [
+      "Transporte ida y vuelta en el crucero Majestic + silla + sombrilla en la playa + almuerzo + souvenirs + acceso VIP al evento"
+    ],
+    inventory: 700,
+    sold: 255,
     visibility: "public"
   },
   {
     id: "3f3f3f3f-3f3f-3f3f-3f3f-3f3f3f3f3f03",
     organizationId: EPR_ORGANIZATION_ID,
     eventId: EVENT_SUMMER_BEATS_ID,
-    name: "Pase Platino",
-    label: "PLATINO",
-    price: 99,
+    name: "Localidad VIP (solo evento)",
+    label: "VIP",
+    price: 35,
     currency: "USD",
-    benefits: ["Acceso premium", "Zona lounge", "Experiencia VIP extendida"],
-    inventory: 600,
-    sold: 120,
+    benefits: ["Acceso a zona VIP del evento (sin transporte)"],
+    inventory: 1200,
+    sold: 360,
     visibility: "public"
   },
   {
     id: "3f3f3f3f-3f3f-3f3f-3f3f-3f3f3f3f3f04",
     organizationId: EPR_ORGANIZATION_ID,
-    eventId: EVENT_BUSINESS_SUMMIT_ID,
-    name: "Pase Platino",
+    eventId: EVENT_SUMMER_BEATS_ID,
+    name: "Palco Platino (solo evento)",
     label: "PLATINO",
-    price: 240,
+    price: 25,
     currency: "USD",
-    benefits: ["Lunch ejecutivo", "Meet & greet speakers", "Asientos preferenciales"],
-    inventory: 120,
-    sold: 34,
+    benefits: ["Acceso a zona Platino del evento (sin transporte)"],
+    inventory: 900,
+    sold: 214,
+    visibility: "public"
+  },
+  {
+    id: "3f3f3f3f-3f3f-3f3f-3f3f-3f3f3f3f3f05",
+    organizationId: EPR_ORGANIZATION_ID,
+    eventId: EVENT_SUMMER_BEATS_ID,
+    name: "General (solo evento)",
+    label: "GENERAL",
+    price: 15,
+    currency: "USD",
+    benefits: ["Acceso a zona general del evento (sin transporte)"],
+    inventory: 3000,
+    sold: 1200,
     visibility: "public"
   }
 ];

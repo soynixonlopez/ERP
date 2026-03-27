@@ -1,4 +1,4 @@
-export type EventStatus = "draft" | "published" | "sold_out" | "cancelled";
+export type EventStatus = "draft" | "published" | "sold_out" | "cancelled" | "upcoming";
 
 export type TicketVisibility = "public" | "hidden";
 

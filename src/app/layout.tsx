@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
+import { Montserrat } from "next/font/google";
 import "@/app/globals.css";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "700", "800", "900"],
+  variable: "--font-main"
+});
 
 export const metadata: Metadata = {
   title: "EPR Reservas",
@@ -13,7 +20,9 @@ type RootLayoutProps = Readonly<{
 export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
   return (
     <html lang="es">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className={`${montserrat.variable} min-h-screen antialiased`}>
+        {children}
+      </body>
     </html>
   );
 }

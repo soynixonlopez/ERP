@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type DashboardMetric = {
   label: string;
@@ -22,7 +22,7 @@ function eventTitleFromEmbed(events: unknown): string {
 }
 
 export async function getDashboardMetrics(organizationId: string): Promise<DashboardMetric[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   const { count: totalReservations } = await supabase
     .from("reservations")
@@ -77,7 +77,7 @@ export async function getRecentReservationsAdmin(
   organizationId: string,
   limit: number
 ): Promise<RecentReservationAdminRow[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   const { data, error } = await supabase
     .from("reservations")

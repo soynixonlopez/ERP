@@ -33,7 +33,7 @@ export default async function ConfirmEmailPage({ searchParams }: PageProps): Pro
             <Mail className="size-8 text-[var(--epr-blue-800)]" aria-hidden />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-black tracking-tight text-[var(--epr-blue-800)] sm:text-3xl">
+            <h1 className="!text-center text-2xl font-black tracking-tight text-[var(--epr-blue-800)] sm:text-3xl">
               Confirma tu correo
             </h1>
             <p className="text-sm leading-relaxed text-slate-600">

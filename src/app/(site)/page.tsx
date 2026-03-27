@@ -2,9 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, CheckCircle2, MapPin, Phone, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TicketCard } from "@/features/tickets/components/ticket-card";
+import { TicketCarousel } from "@/features/tickets/components/ticket-carousel";
 import { getEvents, getTicketsByEventId } from "@/features/events/data";
-import { formatEventDate } from "@/lib/utils/date";
 import type { TicketTypeData } from "@/features/events/types";
 
 export default function HomePage(): JSX.Element {
@@ -14,33 +13,37 @@ export default function HomePage(): JSX.Element {
   const featuredTicketList: TicketTypeData[] = featuredTickets;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-14 md:space-y-16">
       {/* Hero principal */}
       <section className="relative overflow-hidden rounded-2xl bg-[var(--epr-blue-900)]">
         <div className="relative min-h-[22rem] h-[min(70vh,36rem)] sm:min-h-[26rem] md:h-[30rem] md:min-h-0">
-          <Image src={featured.bannerUrl} alt={featured.title} fill className="object-cover" priority />
-          <div className="absolute inset-0 bg-gradient-to-b from-[var(--epr-blue-900)]/20 via-[var(--epr-blue-900)]/60 to-[var(--epr-blue-900)]" />
+          <Image
+            src="/assets/imagenes/bannerTaboga.png"
+            alt="Playa Sol y Luna - Salsa y Vallenato en Taboga"
+            fill
+            className="object-cover object-[center_72%] md:object-[center_68%]"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[var(--epr-blue-900)]/5 via-[var(--epr-blue-900)]/35 to-[var(--epr-blue-900)]/80" />
 
           <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6 md:p-10">
             <div className="max-w-2xl space-y-4 sm:space-y-5">
-              <p className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/95">
-                Summer Beats 2026
-              </p>
-
-              <h1 className="text-3xl font-black uppercase tracking-tight text-[var(--accent)] sm:text-4xl md:text-6xl">
-                {featured.title}
+              <h1 className="text-3xl font-black uppercase tracking-tight text-[var(--accent)] [text-shadow:0_2px_14px_rgba(0,0,0,0.65)] sm:text-4xl md:text-6xl">
+                Vallenato y Salsa en Taboga
               </h1>
 
-              <p className="text-sm leading-relaxed text-white/90 md:text-base">{featured.shortDescription}</p>
+              <p className="text-sm leading-relaxed text-white/95 [text-shadow:0_1px_10px_rgba(0,0,0,0.65)] md:text-base">
+                Escapate a Taboga y disfruta un dia de musica en vivo, playa y buena energia.
+              </p>
 
-              <div className="space-y-2 text-sm text-white/90">
+              <div className="space-y-2 text-sm text-white/95 [text-shadow:0_1px_8px_rgba(0,0,0,0.65)]">
                 <p className="flex items-center gap-2">
                   <CalendarDays className="size-4 text-[var(--accent)]" />
-                  {formatEventDate(featured.startAt)}
+                  4 y 5 de abril - Salida 9:00 a.m.
                 </p>
                 <p className="flex items-center gap-2">
                   <MapPin className="size-4 text-[var(--accent)]" />
-                  {featured.location}
+                  Isla Perico, Calzada de Amador (a lado de la Base Aeronaval)
                 </p>
               </div>
 
@@ -64,84 +67,78 @@ export default function HomePage(): JSX.Element {
       {/* Paquetes destacados */}
       <section className="space-y-5">
         <div className="relative inline-block">
-          <h2 className="epr-section-title !text-3xl text-[var(--epr-blue-800)]">
+          <h2 className="epr-section-title !text-3xl !text-[var(--epr-blue-800)]">
             Paquetes
           </h2>
           <div className="mt-1 h-1 w-24 bg-[var(--accent)]" />
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          {featuredTicketList.map((ticket) => (
-            <TicketCard key={ticket.id} ticket={ticket} />
-          ))}
-        </div>
+        <TicketCarousel tickets={featuredTicketList} />
       </section>
-      {/* Qué es Summer Beats 2026 */}
-      <section className="space-y-5 pt-3">
+
+      {/* Qué es Vallenato y Salsa en Taboga 2026 */}
+      <section className="space-y-5 pt-6 md:pt-8">
         <div className="relative inline-block">
-          <h2 className="epr-section-title !text-3xl !text-[var(--epr-blue-800)]">Qué es Summer Beats 2026</h2>
+          <h2 className="epr-section-title !text-3xl !text-[var(--epr-blue-800)]">
+            Qué es Vallenato y Salsa en Taboga 2026
+          </h2>
           <div className="mt-1 h-1 w-40 bg-[var(--accent)]" />
         </div>
 
         <div className="grid gap-5 md:grid-cols-2 md:items-start">
           <div className="flex flex-col rounded-2xl border border-[var(--border)] bg-white p-6 md:h-[360px]">
-            <p className="text-sm font-semibold text-[var(--epr-blue-800)]">{featured.shortDescription}</p>
-            <p className="mt-3 text-sm text-slate-600">{featured.description}</p>
+            <p className="text-sm font-semibold text-[var(--epr-blue-800)]">
+              Escápate a Taboga y vive una jornada única de playa, música en vivo y energía tropical.
+            </p>
+            <p className="mt-3 text-sm text-slate-600">
+              Un evento diseñado para disfrutar salsa y vallenato en un ambiente frente al mar, con
+              opciones de acceso por crucero y localidades para todos los gustos.
+            </p>
 
             <div className="mt-6 space-y-3">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 size-5 text-[var(--primary)]" />
-                <p className="text-sm text-slate-700">Tarimas y zonas pensadas para vivir cada momento.</p>
+                <p className="text-sm text-slate-700">Salida programada y logística clara desde Isla Perico.</p>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 size-5 text-[var(--primary)]" />
-                <p className="text-sm text-slate-700">Acceso organizado para que tu entrada sea rápida.</p>
+                <p className="text-sm text-slate-700">Paquetes con transporte en crucero Majestic y beneficios de playa.</p>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 size-5 text-[var(--primary)]" />
-                <p className="text-sm text-slate-700">Paquetes con beneficios claros desde el inicio.</p>
+                <p className="text-sm text-slate-700">Opciones VIP, Platino y General para una experiencia a tu medida.</p>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 size-5 text-[var(--primary)]" />
-                <p className="text-sm text-slate-700">Acceso por franjas para una entrada fluida.</p>
+                <p className="text-sm text-slate-700">Acceso organizado para entrada rápida y sin complicaciones.</p>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 size-5 text-[var(--primary)]" />
-                <p className="text-sm text-slate-700">Experiencias pensadas para disfrutar sin preocupaciones.</p>
+                <p className="text-sm text-slate-700">Música, mar y ambiente festivo en Hotel San Pedro, Isla Taboga.</p>
               </div>
             </div>
 
-            <p className="mt-5 text-sm text-slate-600">
-              Elige tu paquete, reserva en minutos y nosotros nos encargamos del resto.
-            </p>
+            <Link href="/packages" className="mt-5 w-full sm:w-auto">
+              <Button size="lg" variant="accent" className="w-full sm:w-auto">
+                Elige tu paquete
+              </Button>
+            </Link>
           </div>
 
-          <div className="relative h-[280px] overflow-hidden rounded-2xl bg-[var(--epr-blue-900)] md:h-[360px]">
+          <div className="relative h-[280px] overflow-hidden rounded-3xl md:h-[360px]">
             <Image
-              src={featured.bannerUrl}
-              alt={featured.title}
+              src="/assets/imagenes/taboga2026.png"
+              alt="Vallenato y Salsa en Taboga 2026"
               fill
-              className="object-cover"
+              className="object-cover rounded-3xl"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-
-            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <p className="text-xs font-semibold uppercase tracking-widest text-white/90">
-                Fecha y ubicación
-              </p>
-              <h3 className="mt-2 text-2xl font-black tracking-tight">{formatEventDate(featured.startAt)}</h3>
-              <div className="mt-2 flex items-center gap-2 text-sm text-white/90">
-                <MapPin className="size-4 text-[var(--accent)]" />
-                <span className="font-semibold">{featured.location}</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* Por qué reservar este evento */}
-      <section className="space-y-5 pt-3">
+      <section className="space-y-5 pt-6 md:pt-8">
         <div className="relative inline-block">
           <h2 className="epr-section-title !text-3xl !text-[var(--epr-blue-800)]">Por qué reservar este evento</h2>
           <div className="mt-1 h-1 w-56 bg-[var(--accent)]/90" />
@@ -186,8 +183,42 @@ export default function HomePage(): JSX.Element {
         </div>
       </section>
 
+      {/* Artistas invitados */}
+      <section className="space-y-5 pt-6 md:pt-8">
+        <div className="relative inline-block">
+          <h2 className="epr-section-title !text-3xl !text-[var(--epr-blue-800)]">
+            Artistas invitados
+          </h2>
+          <div className="mt-1 h-1 w-40 bg-[var(--accent)]" />
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <Image
+            src="/assets/imagenes/artista1.jpeg"
+            alt="Artista invitado 1"
+            width={900}
+            height={1200}
+            className="h-[28rem] w-full rounded-3xl object-cover md:h-[25rem] lg:h-[26rem]"
+          />
+          <Image
+            src="/assets/imagenes/artista2.jpeg"
+            alt="Artista invitado 2"
+            width={900}
+            height={1200}
+            className="h-[28rem] w-full rounded-3xl object-cover md:h-[25rem] lg:h-[26rem]"
+          />
+          <Image
+            src="/assets/imagenes/artista3.jpeg"
+            alt="Artista invitado 3"
+            width={900}
+            height={1200}
+            className="h-[28rem] w-full rounded-3xl object-cover md:h-[25rem] lg:h-[26rem]"
+          />
+        </div>
+      </section>
+
       {/* CTA contacto / paquetes */}
-      <section className="pt-3" aria-label="Contacto y paquetes">
+      <section className="pt-6 md:pt-8" aria-label="Contacto y paquetes">
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-[var(--epr-blue-900)] shadow-md">
           <div className="flex flex-col gap-8 p-6 sm:p-8 md:flex-row md:items-center md:justify-between md:gap-10 lg:p-10">
             <div className="max-w-xl space-y-2 md:space-y-3">

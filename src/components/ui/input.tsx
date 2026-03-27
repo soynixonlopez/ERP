@@ -7,7 +7,7 @@ export function Input({ className, ...props }: InputProps): JSX.Element {
   return (
     <input
       className={cn(
-        "h-10 w-full rounded-lg border border-[var(--border)] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+        "h-11 w-full rounded-lg border border-[var(--border)] bg-white px-3.5 text-base outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
         className
       )}
       {...props}

@@ -3,21 +3,23 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-  /* Azul principal (botones y acentos) */
-  --primary: #0b63f6;
+  /* Azul tropical y amarillo vibrante */
+  --primary: #00b4d8;
   --primary-foreground: #ffffff;
-  /* Amarillo para títulos/etiquetas tipo promo */
-  --accent: #facc15;
+  --accent: #ffc107;
   --accent-foreground: #111827;
   --card: #ffffff;
   --muted: #e2e8f0;
   --border: #e5e7eb;
 
-  /* Paleta extra para el estilo de las capturas */
-  --epr-blue-900: #063a72; /* fondo oscuro */
-  --epr-blue-800: #0b4fa6; /* encabezados y footer */
+  --epr-blue-900: #005b8f;
+  --epr-blue-800: #0077b6;
   --epr-surface: #f1f5f9; /* secciones suaves */
   --epr-soft: #f8fafc; /* fondos claros */
+}
+
+html {
+  font-size: clamp(16px, 0.18vw + 15.4px, 18px);
 }
 
 * {
@@ -27,8 +29,36 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-main), "Montserrat", "Inter", system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-weight: 500;
+}
+
+h1,
+h2 {
+  font-weight: 800;
+  text-align: left;
+  text-shadow: 0px 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+h3,
+h4 {
+  font-weight: 700;
+}
+
+p,
+li,
+label,
+input,
+textarea {
+  font-weight: 500;
+}
+
+small {
+  font-weight: 400;
 }
 
 /* Utilidades visuales de la marca */
@@ -37,7 +67,7 @@ body {
 }
 
 .epr-section-title {
-  @apply text-3xl font-black text-slate-900;
+  @apply text-3xl font-extrabold text-(--epr-blue-800) sm:text-4xl;
 }
 
 .epr-muted {

@@ -12,15 +12,30 @@ type EventCardProps = {
 };
 
 export function EventCard({ event }: EventCardProps): JSX.Element {
+  const isActive = event.status === "published";
+  const hasBanner = event.bannerUrl.trim().length > 0;
+  const badgeText =
+    event.status === "published"
+      ? "Activo"
+      : event.status === "upcoming"
+        ? "Próximamente"
+        : event.status;
+
   return (
     <Card className="overflow-hidden rounded-2xl border border-[var(--border)]">
-      <div className="relative h-44 w-full">
-        <Image src={event.bannerUrl} alt={event.title} fill className="object-cover" />
-      </div>
+      {hasBanner ? (
+        <div className="relative h-44 w-full">
+          <Image src={event.bannerUrl} alt={event.title} fill className="object-cover" />
+        </div>
+      ) : (
+        <div className="flex h-44 w-full items-center justify-center bg-slate-100 px-6 text-center">
+          <p className="text-lg font-bold text-[var(--epr-blue-800)]">Próximamente</p>
+        </div>
+      )}
       <CardContent className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-lg font-bold text-[var(--epr-blue-800)]">{event.title}</h3>
-          <Badge tone={event.status === "published" ? "success" : "warning"}>{event.status}</Badge>
+          <Badge tone={isActive ? "success" : "warning"}>{badgeText}</Badge>
         </div>
         <p className="text-sm text-slate-600">{event.shortDescription}</p>
         <div className="space-y-1 text-sm text-slate-700">
@@ -33,9 +48,17 @@ export function EventCard({ event }: EventCardProps): JSX.Element {
             {event.location}
           </p>
         </div>
-        <Link href={`/events/${event.slug}`}>
-          <Button className="w-full">Ver detalle</Button>
-        </Link>
+        {isActive ? (
+          <Link href={`/events/${event.slug}`}>
+            <Button className="w-full">Ver detalle</Button>
+          </Link>
+        ) : (
+          <Link href="/contact">
+            <Button className="w-full" variant="secondary">
+              Quiero enterarme
+            </Button>
+          </Link>
+        )}
       </CardContent>
     </Card>
   );

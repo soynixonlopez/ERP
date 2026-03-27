@@ -44,23 +44,6 @@ export default async function CartPage({ searchParams }: CartPageProps): Promise
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-5">
-      {/* Acciones */}
-      <div className="flex flex-col gap-3">
-        <Link
-          href={`/checkout?organizationId=${encodeURIComponent(organizationId)}&eventId=${encodeURIComponent(eventId)}&ticketTypeId=${encodeURIComponent(ticket.id)}`}
-          className="w-full"
-        >
-          <Button size="lg" className="w-full">
-            Comprar
-          </Button>
-        </Link>
-        <Link href="/packages" className="w-full">
-          <Button variant="secondary" size="lg" className="w-full">
-            Volver a Paquetes
-          </Button>
-        </Link>
-      </div>
-
       <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -104,7 +87,20 @@ export default async function CartPage({ searchParams }: CartPageProps): Promise
           </div>
         </div>
 
-        <div className="mt-5">
+        <div className="mt-5 space-y-3">
+          <Link
+            href={`/checkout?organizationId=${encodeURIComponent(organizationId)}&eventId=${encodeURIComponent(eventId)}&ticketTypeId=${encodeURIComponent(ticket.id)}`}
+            className="w-full"
+          >
+            <Button size="lg" className="w-full">
+              Comprar
+            </Button>
+          </Link>
+          <Link href="/packages" className="w-full">
+            <Button variant="secondary" size="lg" className="w-full">
+              Volver a Paquetes
+            </Button>
+          </Link>
           <Link href="/packages">
             <Button variant="secondary" size="lg" className="w-full">
               Eliminar

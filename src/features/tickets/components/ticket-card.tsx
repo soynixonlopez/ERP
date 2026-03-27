@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TicketTypeData } from "@/features/events/types";
 import { formatEventDayMonthEs } from "@/lib/utils/date";
@@ -52,13 +52,11 @@ export function TicketCard({ ticket }: TicketCardProps): JSX.Element {
 
         <p className="text-sm text-slate-600">{ticket.benefits.slice(0, 2).join(" + ")}</p>
 
-        <div className="flex items-center justify-between gap-3">
-          <Badge tone={available > 0 ? "success" : "danger"}>{available > 0 ? "Disponible" : "Agotado"}</Badge>
-
-          <Link href={`/packages/${ticket.id}`} className="text-sm font-semibold text-[var(--primary)] hover:underline">
-            Acceso al evento
-          </Link>
-        </div>
+        <Link href={`/packages/${ticket.id}`} className="block">
+          <Button className="w-full" variant={available > 0 ? "primary" : "secondary"} disabled={available <= 0}>
+            {available > 0 ? "Comprar paquete" : "Agotado"}
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   );
