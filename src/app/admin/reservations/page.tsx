@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { EPR_ORGANIZATION_ID } from "@/features/events/data";
 import { AdminReservationsTable, type AdminReservationRow } from "@/features/admin/components/admin-reservations-table";
+import { packageLabelFromItems, type ReservationItemForLabel } from "@/lib/reservations/package-label";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export default async function AdminReservationsPage(): Promise<JSX.Element> {
   const { data } = await supabase
     .from("reservations")
     .select(
-      "id, organization_id, reservation_number, buyer_name, buyer_email, status, payment_status, total, events(title), reservation_items(quantity), attendees(qr_code)"
+      "id, organization_id, reservation_number, buyer_name, buyer_email, status, payment_status, total, created_at, events(title), reservation_items(quantity, ticket_types(name)), attendees(qr_code)"
     )
     .eq("organization_id", EPR_ORGANIZATION_ID)
     .order("created_at", { ascending: false })
@@ -24,10 +25,12 @@ export default async function AdminReservationsPage(): Promise<JSX.Element> {
       customerName: item.buyer_name as string,
       email: item.buyer_email as string,
       event: ((item.events as { title?: string } | null)?.title ?? "Evento") as string,
+      packageLabel: packageLabelFromItems(item.reservation_items as ReservationItemForLabel[] | null),
       quantity: ((item.reservation_items as Array<{ quantity?: number }> | null)?.[0]?.quantity ?? 1) as number,
       reservationStatus: item.status as string,
       paymentStatus: item.payment_status as string,
       total: Number(item.total),
+      createdAt: item.created_at as string,
       qrCode:
         ((item.attendees as Array<{ qr_code?: string | null }> | null)?.[0]?.qr_code ?? null) as
           | string

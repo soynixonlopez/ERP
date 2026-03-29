@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { getAppBaseUrl } from "@/lib/config/manual-payments";
 
 type TicketQrCardProps = {
   qrToken: string;
@@ -26,9 +27,13 @@ export function TicketQrCard({
       setDataUrl("");
       return;
     }
-    void QRCode.toDataURL(qrToken, { width: 240, margin: 2, color: { dark: "#0b4fa6", light: "#ffffff" } }).then(
-      setDataUrl
-    );
+    const inviteUrl = `${getAppBaseUrl()}/invite/${qrToken}`;
+    void QRCode.toDataURL(inviteUrl, {
+      width: 240,
+      margin: 2,
+      errorCorrectionLevel: "M",
+      color: { dark: "#0f172a", light: "#ffffff" }
+    }).then(setDataUrl);
   }, [qrToken, showQr]);
 
   if (!showQr) {
@@ -52,9 +57,8 @@ export function TicketQrCard({
       ) : (
         <p className="mt-4 text-center text-sm text-slate-500">Generando QR…</p>
       )}
-      <p className="mt-2 break-all text-center font-mono text-[10px] text-slate-500">{qrToken}</p>
       <p className="mt-2 text-center text-xs text-slate-600">
-        Presenta este código en el acceso. Es único para validar tu entrada.
+        Al escanear se abre tu entrada digital con todos los datos. Presentala en el acceso al evento.
       </p>
       <Button
         type="button"

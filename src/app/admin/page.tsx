@@ -16,7 +16,7 @@ export default async function AdminDashboardPage(): Promise<JSX.Element> {
       <div className="space-y-1">
         <h1 className="text-3xl font-black text-slate-900">Dashboard</h1>
         <p className="text-slate-600">
-          Datos en vivo de Supabase para la organización EPR (reservas, pagos y eventos).
+          Datos en vivo de Supabase para la organización EPR (reservas y pagos).
         </p>
       </div>
       <MetricsGrid metrics={metrics} />

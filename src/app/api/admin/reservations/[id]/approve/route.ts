@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { canManageOrganization, getOrganizationMembership } from "@/lib/auth/organization";
+import { requireReservationAdminActor } from "@/lib/auth/organization";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendReservationConfirmedEmail } from "@/lib/notifications/reservation-confirmed";
+import { zPgUuid } from "@/lib/validations/zod-pg-uuid";
 
 const approveSchema = z.object({
-  organizationId: z.uuid(),
+  organizationId: zPgUuid,
   providerReference: z.string().max(120).optional()
 });
 
@@ -22,12 +23,12 @@ export async function POST(request: Request, { params }: RouteParams): Promise<N
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Payload invalido" }, { status: 400 });
   }
 
-  const membership = await getOrganizationMembership(parsed.data.organizationId);
-  if (!membership || !canManageOrganization(membership.role)) {
+  const actor = await requireReservationAdminActor(parsed.data.organizationId);
+  if (!actor) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data: reservation, error: reservationError } = await supabase
     .from("reservations")
     .select("id, reservation_number, buyer_name, buyer_email, total, organization_id, event_id, events(title)")
@@ -80,7 +81,7 @@ export async function POST(request: Request, { params }: RouteParams): Promise<N
 
   await supabase.from("audit_logs").insert({
     organization_id: parsed.data.organizationId,
-    actor_user_id: membership.userId,
+    actor_user_id: actor.userId,
     entity_name: "reservations",
     entity_id: id,
     action: "approve_manual_payment",
