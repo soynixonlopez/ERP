@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot
   },
+  // Formularios de evento/paquetes envían varias imágenes en un solo Server Action (límite por defecto 1 MB).
+  serverActions: {
+    bodySizeLimit: "25mb"
+  },
   images: {
     remotePatterns: [
       {

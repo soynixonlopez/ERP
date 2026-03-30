@@ -105,18 +105,63 @@ export async function DELETE(request: Request, { params }: RouteParams): Promise
   }
 
   const supabase = createSupabaseAdminClient();
-  const { data: paymentRows } = await supabase
-    .from("payments")
-    .select("id")
-    .eq("reservation_id", id)
+  const { data: reservation, error: reservationLookupError } = await supabase
+    .from("reservations")
+    .select("id, status, reservation_number")
+    .eq("id", id)
     .eq("organization_id", organizationId)
-    .limit(1);
+    .single();
 
-  if (paymentRows?.length) {
-    return NextResponse.json(
-      { error: "No se puede eliminar una reserva con pagos registrados. Usa cancelar." },
-      { status: 409 }
-    );
+  if (reservationLookupError || !reservation) {
+    return NextResponse.json({ error: "Reserva no encontrada" }, { status: 404 });
+  }
+
+  // Cancelar y expirar ya devolvieron inventario; no restar dos veces.
+  const inventoryAlreadyReleased =
+    reservation.status === "cancelled" ||
+    reservation.status === "expired" ||
+    reservation.status === "refunded";
+
+  if (!inventoryAlreadyReleased) {
+    const { data: itemRows } = await supabase
+      .from("reservation_items")
+      .select("ticket_type_id, quantity")
+      .eq("reservation_id", id)
+      .eq("organization_id", organizationId);
+
+    if (itemRows?.length) {
+      for (const item of itemRows) {
+        const { data: ticket } = await supabase
+          .from("ticket_types")
+          .select("sold")
+          .eq("id", item.ticket_type_id)
+          .eq("organization_id", organizationId)
+          .maybeSingle();
+
+        if (ticket) {
+          const { error: soldError } = await supabase
+            .from("ticket_types")
+            .update({ sold: Math.max(0, Number(ticket.sold) - Number(item.quantity)) })
+            .eq("id", item.ticket_type_id)
+            .eq("organization_id", organizationId);
+          if (soldError) {
+            console.error("[DELETE reservation] restore inventory", soldError);
+            return NextResponse.json({ error: "No se pudo actualizar el inventario al eliminar" }, { status: 500 });
+          }
+        }
+      }
+    }
+  }
+
+  const { error: paymentsDeleteError } = await supabase
+    .from("payments")
+    .delete()
+    .eq("reservation_id", id)
+    .eq("organization_id", organizationId);
+
+  if (paymentsDeleteError) {
+    console.error("[DELETE reservation] payments", paymentsDeleteError);
+    return NextResponse.json({ error: "No se pudo eliminar los registros de pago asociados" }, { status: 500 });
   }
 
   const { error } = await supabase
@@ -126,6 +171,7 @@ export async function DELETE(request: Request, { params }: RouteParams): Promise
     .eq("organization_id", organizationId);
 
   if (error) {
+    console.error("[DELETE reservation] reservation", error);
     return NextResponse.json({ error: "No se pudo eliminar la reserva" }, { status: 500 });
   }
 
@@ -134,7 +180,8 @@ export async function DELETE(request: Request, { params }: RouteParams): Promise
     actor_user_id: actor.userId,
     entity_name: "reservations",
     entity_id: id,
-    action: "delete_reservation_admin"
+    action: "delete_reservation_admin",
+    new_data: { reservation_number: reservation.reservation_number }
   });
 
   return NextResponse.json({ ok: true });

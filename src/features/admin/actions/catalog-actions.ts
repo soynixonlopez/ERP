@@ -50,14 +50,15 @@ function extFromFileName(name: string): string {
 async function uploadImageIfPresent(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   fieldName: string,
-  formData: FormData
+  formData: FormData,
+  folder: string = "promo"
 ): Promise<string | null> {
   const raw = formData.get(fieldName);
   if (!(raw instanceof File) || raw.size === 0) {
     return null;
   }
   const ext = extFromFileName(raw.name);
-  const path = `${EPR_ORGANIZATION_ID}/promo/${crypto.randomUUID()}.${ext}`;
+  const path = `${EPR_ORGANIZATION_ID}/${folder}/${crypto.randomUUID()}.${ext}`;
   const buf = Buffer.from(await raw.arrayBuffer());
   const { error } = await supabase.storage.from(BUCKET).upload(path, buf, {
     contentType: raw.type || "image/jpeg",
@@ -89,28 +90,18 @@ function bulletsFromTextarea(text: string): string[] | undefined {
   return lines.length > 0 ? lines : undefined;
 }
 
-function artistsFromInputs(formData: FormData): string[] | undefined {
-  const urls = [str(formData, "hp_artist1"), str(formData, "hp_artist2"), str(formData, "hp_artist3")].filter(
-    Boolean
-  );
-  return urls.length > 0 ? urls : undefined;
-}
-
 function buildHomepageFromForm(formData: FormData): EventHomepageBlock {
   const bullets = bulletsFromTextarea(str(formData, "hp_storyBullets"));
   return {
     featured: formData.get("hp_block_featured") === "on",
     heroTitle: optionalStr(formData, "hp_heroTitle"),
     heroSubtitle: optionalStr(formData, "hp_heroSubtitle"),
-    heroImage: optionalStr(formData, "hp_heroImage"),
     dateLine: optionalStr(formData, "hp_dateLine"),
     locationLine: optionalStr(formData, "hp_locationLine"),
     storyTitle: optionalStr(formData, "hp_storyTitle"),
     storyLead: optionalStr(formData, "hp_storyLead"),
     storyBody: optionalStr(formData, "hp_storyBody"),
-    storyBullets: bullets,
-    storyImage: optionalStr(formData, "hp_storyImage"),
-    artistImages: artistsFromInputs(formData)
+    storyBullets: bullets
   };
 }
 
@@ -155,7 +146,7 @@ export async function saveEventAction(
     }
 
     let coverUrl = optionalStr(formData, "cover_image_url");
-    const uploadedCover = await uploadImageIfPresent(supabase, "cover_file", formData);
+    const uploadedCover = await uploadImageIfPresent(supabase, "cover_file", formData, "cover");
     if (uploadedCover) {
       coverUrl = uploadedCover;
     }
@@ -171,7 +162,50 @@ export async function saveEventAction(
       existingMeta = row?.metadata ?? {};
     }
 
-    const metadata = mergeEventMetadata(existingMeta, formData);
+    let metadata = mergeEventMetadata(existingMeta, formData);
+    const prevHp = parseEventMetadata(existingMeta).homepage;
+
+    const [uploadedHero, uploadedStory, uploadedArtist1, uploadedArtist2, uploadedArtist3] =
+      await Promise.all([
+        uploadImageIfPresent(supabase, "hp_hero_file", formData, "hero"),
+        uploadImageIfPresent(supabase, "hp_story_file", formData, "story"),
+        uploadImageIfPresent(supabase, "hp_artist_file_1", formData, "artist"),
+        uploadImageIfPresent(supabase, "hp_artist_file_2", formData, "artist"),
+        uploadImageIfPresent(supabase, "hp_artist_file_3", formData, "artist")
+      ]);
+
+    const hpBase =
+      typeof metadata.homepage === "object" && metadata.homepage !== null && !Array.isArray(metadata.homepage)
+        ? (metadata.homepage as Record<string, unknown>)
+        : {};
+
+    const heroImage = uploadedHero ?? prevHp.heroImage;
+    const storyUrl = str(formData, "hp_storyImage");
+    const storyImage =
+      uploadedStory ?? (storyUrl.length > 0 ? storyUrl : undefined) ?? prevHp.storyImage;
+
+    const prevArt = prevHp.artistImages ?? [];
+    function resolveArtistSlot(i: 1 | 2 | 3, uploaded: string | null): string | undefined {
+      const url = str(formData, `hp_artist${i}`);
+      if (uploaded) return uploaded;
+      if (url.length > 0) return url;
+      return prevArt[i - 1];
+    }
+    const a1 = resolveArtistSlot(1, uploadedArtist1);
+    const a2 = resolveArtistSlot(2, uploadedArtist2);
+    const a3 = resolveArtistSlot(3, uploadedArtist3);
+    const artistBuilt = [a1, a2, a3].filter((x): x is string => Boolean(x));
+    const artistImages = artistBuilt.length > 0 ? artistBuilt : prevArt.length > 0 ? prevArt : undefined;
+
+    metadata = {
+      ...metadata,
+      homepage: {
+        ...hpBase,
+        heroImage,
+        storyImage,
+        artistImages
+      }
+    };
 
     const payload = {
       organization_id: EPR_ORGANIZATION_ID,
@@ -271,7 +305,7 @@ export async function saveTicketAction(
     }
 
     let promoUrl = optionalStr(formData, "promotional_image_url");
-    const uploaded = await uploadImageIfPresent(supabase, "promo_file", formData);
+    const uploaded = await uploadImageIfPresent(supabase, "promo_file", formData, "promo");
     if (uploaded) {
       promoUrl = uploaded;
     }

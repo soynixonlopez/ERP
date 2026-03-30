@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { saveEventAction, type CatalogActionResult } from "@/features/admin/actions/catalog-actions";
+import { ImageUrlOrFileField } from "@/features/admin/components/image-url-or-file-field";
 import type { AdminEventRow } from "@/features/events/server/queries";
 import { parseEventMetadata } from "@/features/events/server/metadata";
 
@@ -184,13 +185,17 @@ export function EventEditorForm({ initial }: EventEditorFormProps): React.JSX.El
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900">Imagen promocional</h2>
         <p className="text-sm text-slate-600">
-          Se usa en tarjetas de evento y como respaldo visual. También puedes pegar una URL pública.
+          Se usa en tarjetas de evento y como respaldo visual. Puedes pegar una URL o subir archivo (Storage tiene
+          prioridad).
         </p>
-        <input type="hidden" name="cover_image_url" defaultValue={initial?.cover_image_url ?? ""} />
-        {initial?.cover_image_url ? (
-          <p className="text-xs text-slate-500 break-all">Actual: {initial.cover_image_url}</p>
-        ) : null}
-        <Input id="cover_file" name="cover_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" />
+        <ImageUrlOrFileField
+          id="cover_image_url"
+          nameUrl="cover_image_url"
+          nameFile="cover_file"
+          label="Portada del evento"
+          hint="Si una extensión del navegador bloquea el cuadro de adjunto, usa la URL o prueba en ventana de incógnito."
+          defaultUrl={initial?.cover_image_url}
+        />
       </section>
 
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -240,10 +245,27 @@ export function EventEditorForm({ initial }: EventEditorFormProps): React.JSX.El
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="hp_heroImage">
-            Hero — imagen (URL)
-          </label>
-          <Input id="hp_heroImage" name="hp_heroImage" type="url" defaultValue={hp.heroImage ?? ""} />
+          <p className="text-sm font-semibold text-slate-700">Hero — imagen</p>
+          <p className="text-xs text-slate-500">
+            Solo archivo (Storage). Si no eliges uno nuevo, se mantiene la actual.
+          </p>
+          {hp.heroImage ? (
+            <p className="text-xs text-slate-500 break-all">Actual: {hp.heroImage}</p>
+          ) : null}
+          <div className="relative min-h-[3.5rem] overflow-hidden rounded-xl border-2 border-dashed border-[var(--epr-blue-800)]/40 bg-[var(--epr-blue-800)]/[0.07]">
+            <input
+              id="hp_hero_file"
+              name="hp_hero_file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              autoComplete="off"
+              aria-label="Elegir imagen del hero"
+              className="absolute inset-0 z-[1] h-full min-h-[3.5rem] w-full cursor-pointer opacity-0"
+            />
+            <div className="pointer-events-none flex min-h-[3.5rem] items-center justify-center px-4 py-3.5 text-sm font-bold text-[var(--epr-blue-800)]">
+              Elegir imagen del hero
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -303,33 +325,48 @@ export function EventEditorForm({ initial }: EventEditorFormProps): React.JSX.El
             className="w-full rounded-lg border border-[var(--border)] bg-white px-3.5 py-2.5 text-base outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
           />
         </div>
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="hp_storyImage">
-            Sección historia — imagen (URL)
-          </label>
-          <Input id="hp_storyImage" name="hp_storyImage" type="url" defaultValue={hp.storyImage ?? ""} />
-        </div>
+        <ImageUrlOrFileField
+          id="hp_storyImage"
+          nameUrl="hp_storyImage"
+          nameFile="hp_story_file"
+          label="Sección historia — imagen"
+          hint="Puedes pegar una URL o subir un archivo; si subes archivo, tiene prioridad."
+          defaultUrl={hp.storyImage}
+        />
 
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-slate-700">Artistas — imágenes (URL, hasta 3)</p>
-          <Input
-            name="hp_artist1"
-            type="url"
-            placeholder="URL imagen 1"
-            defaultValue={hp.artistImages?.[0] ?? ""}
-          />
-          <Input
-            name="hp_artist2"
-            type="url"
-            placeholder="URL imagen 2"
-            defaultValue={hp.artistImages?.[1] ?? ""}
-          />
-          <Input
-            name="hp_artist3"
-            type="url"
-            placeholder="URL imagen 3"
-            defaultValue={hp.artistImages?.[2] ?? ""}
-          />
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-700">Artistas — hasta 3 imágenes</p>
+            <p className="text-xs text-slate-500">
+              Cada bloque acepta URL o archivo. La subida a Storage tiene prioridad sobre el enlace.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-3">
+            <ImageUrlOrFileField
+              id="hp_artist1"
+              nameUrl="hp_artist1"
+              nameFile="hp_artist_file_1"
+              label="Artista 1"
+              defaultUrl={hp.artistImages?.[0]}
+              placeholderUrl="https://…"
+            />
+            <ImageUrlOrFileField
+              id="hp_artist2"
+              nameUrl="hp_artist2"
+              nameFile="hp_artist_file_2"
+              label="Artista 2"
+              defaultUrl={hp.artistImages?.[1]}
+              placeholderUrl="https://…"
+            />
+            <ImageUrlOrFileField
+              id="hp_artist3"
+              nameUrl="hp_artist3"
+              nameFile="hp_artist_file_3"
+              label="Artista 3"
+              defaultUrl={hp.artistImages?.[2]}
+              placeholderUrl="https://…"
+            />
+          </div>
         </div>
       </section>
 
