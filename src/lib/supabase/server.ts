@@ -12,7 +12,14 @@ export async function createSupabaseServerClient() {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // En Server Components `cookies().set` no está permitido; el refresh puede
+          // aplicarse en Route Handlers, Server Actions o middleware en la siguiente petición.
+        }
       }
     }
   });

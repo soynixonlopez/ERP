@@ -19,7 +19,9 @@ export function EventCard({ event }: EventCardProps): JSX.Element {
       ? "Activo"
       : event.status === "upcoming"
         ? "Próximamente"
-        : event.status;
+        : event.status === "sold_out"
+          ? "Agotado"
+          : event.status;
 
   return (
     <Card className="overflow-hidden rounded-2xl border border-[var(--border)]">
@@ -48,7 +50,7 @@ export function EventCard({ event }: EventCardProps): JSX.Element {
             {event.location}
           </p>
         </div>
-        {isActive ? (
+        {isActive || event.status === "sold_out" ? (
           <Link href={`/events/${event.slug}`}>
             <Button className="w-full">Ver detalle</Button>
           </Link>

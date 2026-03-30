@@ -1,8 +1,10 @@
 import { EventCard } from "@/features/events/components/event-card";
-import { getEvents } from "@/features/events/data";
+import { fetchPublicEvents } from "@/features/events/server/queries";
 
-export default function EventsPage(): JSX.Element {
-  const events = getEvents();
+export const dynamic = "force-dynamic";
+
+export default async function EventsPage(): Promise<JSX.Element> {
+  const events = await fetchPublicEvents();
 
   return (
     <section className="space-y-7">
@@ -15,11 +17,17 @@ export default function EventsPage(): JSX.Element {
           Descubre los eventos activos y reserva tus paquetes.
         </p>
       </div>
-      <div className="grid gap-5 md:grid-cols-2">
-        {events.map((event) => (
-          <EventCard key={event.id} event={event} />
-        ))}
-      </div>
+      {events.length === 0 ? (
+        <p className="rounded-2xl border border-[var(--border)] bg-white px-6 py-10 text-center text-sm text-slate-600">
+          Pronto publicaremos nuevos eventos. Vuelve más tarde o contacta al equipo desde la sección de contacto.
+        </p>
+      ) : (
+        <div className="grid gap-5 md:grid-cols-2">
+          {events.map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

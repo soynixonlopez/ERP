@@ -3,7 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { TicketTypeData } from "@/features/events/types";
 import { formatEventDayMonthEs } from "@/lib/utils/date";
 import Link from "next/link";
-import { getEvents } from "@/features/events/data";
 import Image from "next/image";
 
 type TicketCardProps = {
@@ -12,7 +11,7 @@ type TicketCardProps = {
 
 export function TicketCard({ ticket }: TicketCardProps): JSX.Element {
   const available = ticket.inventory - ticket.sold;
-  const event = getEvents().find((e) => e.id === ticket.eventId);
+  const hero = ticket.promotionalImageUrl?.trim() || ticket.eventBannerUrl?.trim() || "";
 
   const packageTone =
     ticket.label === "VIP"
@@ -25,21 +24,24 @@ export function TicketCard({ ticket }: TicketCardProps): JSX.Element {
 
   return (
     <Card className="flex flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-white">
-      <div className="relative h-44 w-full md:h-48">
-        <Image
-          src="/assets/imagenes/BannerEventoTaboga.png"
-          alt={`Banner ${ticket.label}`}
-          fill
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-transparent" />
+      <div className="relative h-44 w-full md:h-48 bg-slate-200">
+        {hero ? (
+          <>
+            <Image src={hero} alt="" fill className="object-cover" sizes="(min-width: 768px) 33vw, 100vw" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-transparent" />
+          </>
+        ) : (
+          <div className="flex h-full items-center justify-center px-4 text-center text-sm font-bold text-[var(--epr-blue-800)]">
+            Imagen promocional
+          </div>
+        )}
       </div>
 
       <CardContent className="flex flex-col space-y-4 p-5">
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1 space-y-1">
             <p className="text-xs font-black tracking-widest text-[var(--epr-blue-800)]">
-              {event?.startAt ? formatEventDayMonthEs(event.startAt) : "FECHA"}
+              {ticket.eventStartAt ? formatEventDayMonthEs(ticket.eventStartAt) : "FECHA"}
             </p>
             <h3 className="text-base font-black text-slate-900">{ticket.name}</h3>
           </div>

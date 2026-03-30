@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckoutForm } from "@/features/checkout/components/checkout-form";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getEvents, getTicketById } from "@/features/events/data";
+import { fetchPublicEventById, fetchPublicTicketById } from "@/features/events/server/queries";
 import { formatEventDayMonthEs, formatEventTimeAmPmEs } from "@/lib/utils/date";
 
 type CheckoutPageProps = {
@@ -28,10 +28,14 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps):
 
   if (!user) redirect("/login");
 
-  const event = getEvents().find((e) => e.id === eventId);
-  const ticket = getTicketById(ticketTypeId);
+  const [event, ticket] = await Promise.all([
+    fetchPublicEventById(eventId),
+    fetchPublicTicketById(ticketTypeId)
+  ]);
 
-  if (!event || !ticket) redirect("/packages");
+  if (!event || !ticket || ticket.eventId !== event.id || event.organizationId !== organizationId) {
+    redirect("/packages");
+  }
 
   return (
     <section className="mx-auto grid w-full max-w-4xl gap-6 lg:grid-cols-2">

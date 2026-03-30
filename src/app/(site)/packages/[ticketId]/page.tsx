@@ -1,9 +1,12 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDays, Clock, MapPin, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getEvents, getTicketById } from "@/features/events/data";
+import { fetchPublicEventById, fetchPublicTicketById } from "@/features/events/server/queries";
 import { formatEventDayMonthEs, formatEventTimeAmPmEs, formatEventWeekdayDateEs } from "@/lib/utils/date";
+
+export const dynamic = "force-dynamic";
 
 type PackageDetailPageProps = {
   params: Promise<{ ticketId: string }>;
@@ -11,16 +14,27 @@ type PackageDetailPageProps = {
 
 export default async function PackageDetailPage({ params }: PackageDetailPageProps): Promise<JSX.Element> {
   const { ticketId } = await params;
-  const ticket = getTicketById(ticketId);
-  if (!ticket) notFound();
+  const ticket = await fetchPublicTicketById(ticketId);
+  if (!ticket) {
+    notFound();
+  }
 
-  const event = getEvents().find((e) => e.id === ticket.eventId);
-  if (!event) notFound();
+  const event = await fetchPublicEventById(ticket.eventId);
+  if (!event) {
+    notFound();
+  }
 
+  const hero = ticket.promotionalImageUrl?.trim() || ticket.eventBannerUrl?.trim() || "";
   const priceLabel = `$${ticket.price.toFixed(0)}`;
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-5">
+      {hero ? (
+        <div className="relative h-48 w-full overflow-hidden rounded-2xl bg-slate-100 md:h-56">
+          <Image src={hero} alt="" fill className="object-cover" sizes="(min-width: 640px) 42rem, 100vw" />
+        </div>
+      ) : null}
+
       <div className="rounded-2xl border border-[var(--border)] bg-white p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -42,14 +56,13 @@ export default async function PackageDetailPage({ params }: PackageDetailPagePro
           <div className="flex items-center gap-2">
             <Clock className="size-4 text-[var(--primary)]" />
             <span>
-              Salida: <span className="font-semibold text-slate-900">{formatEventTimeAmPmEs(event.startAt)}</span>
+              Salida:{" "}
+              <span className="font-semibold text-slate-900">{formatEventTimeAmPmEs(event.startAt)}</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <CalendarDays className="size-4 text-[var(--primary)]" />
-            <span>
-              {formatEventWeekdayDateEs(event.startAt)}
-            </span>
+            <span>{formatEventWeekdayDateEs(event.startAt)}</span>
           </div>
           <div className="flex items-center gap-2 md:col-span-2">
             <MapPin className="size-4 text-[var(--primary)]" />
@@ -83,4 +96,3 @@ export default async function PackageDetailPage({ params }: PackageDetailPagePro
     </section>
   );
 }
-

@@ -31,6 +31,14 @@ export function TicketCarousel({ tickets }: TicketCarouselProps): React.JSX.Elem
   const canNext = page < pages.length - 1;
   const visibleTickets = pages[page] ?? [];
 
+  if (sortedTickets.length === 0) {
+    return (
+      <p className="rounded-2xl border border-dashed border-[var(--border)] bg-white px-6 py-10 text-center text-sm text-slate-600">
+        Cuando haya paquetes publicados para el evento destacado, aparecerán aquí en carrusel.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Movil y tablet: lista vertical */}

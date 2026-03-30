@@ -20,6 +20,18 @@ function adminEmailsFromEnv(): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Acceso “externo” al panel (lista de correos o metadatos), sin depender de `organization_members`.
+ * Sirve para auto-provisionar membresía en la org EPR al entrar en /admin.
+ */
+export function hasAdminBypassCredentials(user: User): boolean {
+  if (isAdminFromUserMetadata(user)) {
+    return true;
+  }
+  const email = user.email?.toLowerCase();
+  return !!(email && adminEmailsFromEnv().includes(email));
+}
+
 function isAdminFromUserMetadata(user: User): boolean {
   const meta = user.user_metadata as Record<string, unknown> | undefined;
   if (meta?.is_admin === true || meta?.app_role === "admin" || meta?.role === "admin") {

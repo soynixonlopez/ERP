@@ -4,12 +4,14 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
+  CalendarRange,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
   LogOut,
   Menu,
+  Package,
   ScanLine
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,8 @@ import { signOutAction } from "@/features/auth/actions/auth-actions";
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/events", label: "Eventos", icon: CalendarRange },
+  { href: "/admin/packages", label: "Paquetes", icon: Package },
   { href: "/admin/reservations", label: "Reservas", icon: ClipboardList },
   { href: "/admin/check-in", label: "Control de acceso", icon: ScanLine }
 ];
