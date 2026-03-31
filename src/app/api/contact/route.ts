@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { authRateLimit, enforceRateLimit } from "@/lib/security/rate-limit";
 
 const contactSchema = z.object({
   nombre: z.string().min(2, "Nombre muy corto").max(80, "Nombre muy largo"),
@@ -11,6 +12,15 @@ const contactSchema = z.object({
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? "local";
+    const limitResult = await enforceRateLimit(authRateLimit, `contact:${ip}`);
+    if (!limitResult.success) {
+      return NextResponse.json(
+        { ok: false, error: "Demasiadas solicitudes, intenta de nuevo en breve." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const parsed = contactSchema.safeParse({
       nombre: String(body?.nombre ?? ""),

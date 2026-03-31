@@ -4,10 +4,10 @@ import { SiteBrandLogo } from "@/components/layout/site-brand-logo";
 
 export function SiteFooter(): JSX.Element {
   return (
-    <footer className="border-t border-[var(--border)] bg-[var(--epr-blue-800)]">
+    <footer className="border-t border-[var(--border)] bg-[var(--epr-blue-800)] print:hidden">
       <div className="epr-container pt-12 pb-8 text-white sm:pt-16 md:pt-20 md:pb-10">
         {/* Widgets principales */}
-        <div className="grid grid-cols-1 items-start gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-4">
+        <div className="grid min-w-0 grid-cols-1 items-start gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-2 lg:gap-x-8 xl:grid-cols-4 xl:gap-x-6 2xl:gap-x-10">
           {/* Widget 1: marca + redes */}
           <div className="min-w-0 space-y-4">
             <div className="flex items-center">
@@ -78,9 +78,14 @@ export function SiteFooter(): JSX.Element {
                 <Phone className="size-4 text-[var(--accent)]" />
                 <span className="font-semibold text-white">+507 6795-8877</span>
               </p>
-              <p className="flex items-center gap-2">
-                <Mail className="size-4 text-[var(--accent)]" />
-                <span className="break-all font-semibold text-white">ernestopuerta1124@gmail.com</span>
+              <p className="flex min-w-0 items-center gap-2">
+                <Mail className="size-4 shrink-0 text-[var(--accent)]" aria-hidden />
+                <a
+                  href="mailto:ernestopuerta1124@gmail.com"
+                  className="min-w-0 flex-1 whitespace-nowrap text-[11px] font-semibold leading-tight text-white hover:underline sm:text-xs md:text-sm"
+                >
+                  ernestopuerta1124@gmail.com
+                </a>
               </p>
               <p className="flex items-center gap-2">
                 <CalendarDays className="size-4 text-[var(--accent)]" />
@@ -92,15 +97,18 @@ export function SiteFooter(): JSX.Element {
           {/* Widget 4: acceso al evento */}
           <div className="min-w-0 space-y-4">
             <p className="text-sm font-semibold md:text-base">Acceso al evento</p>
-            <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
+            <div className="min-w-0 rounded-2xl border border-white/15 bg-white/5 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-white/80">
                 Consejo rápido
               </p>
-              <p className="mt-2 text-sm text-white/85">
+              <p className="mt-2 text-sm leading-relaxed text-white/85 break-words">
                 Confirma tu paquete y conserva tu información para el acceso.
               </p>
               <div className="mt-4">
-                <Link href="/packages" className="text-sm font-semibold text-[var(--accent)] hover:underline">
+                <Link
+                  href="/packages"
+                  className="inline-block min-w-0 text-sm font-semibold break-words text-[var(--accent)] hover:underline"
+                >
                   Ver paquetes disponibles
                 </Link>
               </div>

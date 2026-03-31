@@ -43,7 +43,7 @@ export function TicketCard({ ticket }: TicketCardProps): JSX.Element {
             <p className="text-xs font-black tracking-widest text-[var(--epr-blue-800)]">
               {ticket.eventStartAt ? formatEventDayMonthEs(ticket.eventStartAt) : "FECHA"}
             </p>
-            <h3 className="text-base font-black text-slate-900">{ticket.name}</h3>
+            <h3 className="text-base font-black leading-snug text-slate-900 break-words">{ticket.name}</h3>
           </div>
 
           <div className="shrink-0 text-right">

@@ -1,58 +1,98 @@
-# EPR Reservas Platform
+# EPR Reservas
 
-Plataforma multi-tenant de reservas de eventos y paquetes construida con Next.js App Router, Supabase y TypeScript estricto.
+Aplicación web corporativa para la gestión de **reservas de eventos y paquetes** (catálogo público, proceso de compra, área de cliente y panel administrativo). Proyecto **privado** de **EPR S.A.**; este documento resume lo necesario para desarrollo y despliegue, sin detallar lógica de negocio interna ni credenciales.
 
-## Stack
+---
 
-- Next.js App Router + TypeScript strict
-- Tailwind CSS + componentes UI reutilizables
-- Supabase Auth + Postgres + RLS
-- Zod + React Hook Form
-- TanStack Table para panel admin
-- Upstash Redis para rate limit
+## Alcance funcional (resumen)
 
-## Desarrollo local
+| Ámbito | Contenido |
+|--------|-----------|
+| Sitio público | Eventos, paquetes, carrito, checkout y confirmaciones según flujo configurado |
+| Cliente | Cuenta, reservas y tickets digitales |
+| Administración | Catálogo, reservas, control de acceso (check-in) y métricas operativas |
 
-1. Instala dependencias:
+Los detalles de reglas comerciales, políticas y configuración por entorno se documentan **fuera** de este repositorio cuando aplique.
+
+---
+
+## Stack técnico
+
+- **Framework:** Next.js (App Router), React, TypeScript  
+- **Estilos:** Tailwind CSS  
+- **Datos y auth:** Supabase (PostgreSQL, RLS, autenticación)  
+- **Validación:** Zod (y formularios con React Hook Form donde corresponda)  
+- **Panel de tablas:** TanStack Table  
+- **Otros:** integraciones opcionales según variables de entorno (p. ej. correo transaccional, analítica, observabilidad); ver `.env.example`
+
+---
+
+## Requisitos
+
+- **Node.js** (LTS recomendado)  
+- **npm** (gestor usado en el proyecto)
+
+---
+
+## Puesta en marcha local
 
 ```bash
 npm install
-```
-
-2. Copia variables de entorno:
-
-```bash
 cp .env.example .env.local
 ```
 
-3. Ejecuta el proyecto:
+Complete `.env.local` con los valores que el equipo le facilite (URLs de Supabase, claves y parámetros de integración). **No** suba `.env.local` al repositorio.
 
 ```bash
 npm run dev
 ```
 
-## Estructura base
+La aplicación queda disponible en la URL que indique la consola (por defecto `http://localhost:3000` si `NEXT_PUBLIC_APP_URL` apunta a local).
+
+---
+
+## Scripts
+
+| Comando | Uso |
+|---------|-----|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Compilación de producción |
+| `npm run start` | Servidor tras `build` |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | Comprobación de tipos TypeScript |
+
+---
+
+## Estructura del código (orientativa)
 
 ```text
 src/
-  app/
-  components/
-  features/
-  lib/
+  app/           # Rutas y layouts (App Router)
+  components/    # UI compartida
+  features/      # Módulos por dominio (eventos, admin, check-in, etc.)
+  lib/           # Utilidades, cliente Supabase, validaciones
 supabase/
-  migrations/
-  seed/
+  migrations/    # Esquema y cambios de base de datos
 ```
 
-## Migracion inicial
+---
 
-La migracion inicial de Supabase esta en:
+## Base de datos
 
-- `supabase/migrations/202603240001_initial_schema.sql`
+Las migraciones SQL viven en `supabase/migrations/`. El orden y la aplicación en cada entorno (desarrollo, staging, producción) las coordina el equipo; no se incluyen datos reales en el repositorio.
 
-Incluye:
-- tablas multi-tenant con `organization_id`
-- enums de dominio
-- indices y triggers `updated_at`
-- RLS por organizacion y rol
-- funciones RPC para reservas, pago, expiracion y check-in
+---
+
+## Variables de entorno
+
+Los nombres de variables esperados están en **`.env.example`**. Cada clave y valor debe obtenerse por canales internos; este README no documenta secretos ni endpoints privados.
+
+---
+
+## Licencia y uso
+
+Código **privado** y de uso restringido a **EPR S.A.** y personas autorizadas. Queda prohibida la redistribución o el uso fuera del ámbito acordado sin permiso expreso.
+
+---
+
+*Última actualización del README orientada a onboarding técnico; para cambios de producto o operativa, consultar la documentación interna de la empresa.*

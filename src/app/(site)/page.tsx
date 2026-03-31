@@ -36,13 +36,15 @@ export default async function HomePage(): Promise<JSX.Element> {
               </p>
 
               <div className="space-y-2 text-sm text-white/95 [text-shadow:0_1px_8px_rgba(0,0,0,0.65)]">
-                <p className="flex items-center gap-2">
-                  <CalendarDays className="size-4 text-[var(--accent)]" />
-                  4 y 5 de abril - Salida 9:00 a.m.
+                <p className="flex min-w-0 items-start gap-2">
+                  <CalendarDays className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" />
+                  <span className="min-w-0 break-words leading-snug">4 y 5 de abril - Salida 9:00 a.m.</span>
                 </p>
-                <p className="flex items-center gap-2">
-                  <MapPin className="size-4 text-[var(--accent)]" />
-                  Isla Perico, Calzada de Amador (a lado de la Base Aeronaval)
+                <p className="flex min-w-0 items-start gap-2">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" />
+                  <span className="min-w-0 break-words leading-snug">
+                    Isla Perico, Calzada de Amador (a lado de la Base Aeronaval)
+                  </span>
                 </p>
               </div>
 
@@ -84,8 +86,8 @@ export default async function HomePage(): Promise<JSX.Element> {
           <div className="mt-1 h-1 w-40 bg-[var(--accent)]" />
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 md:items-start">
-          <div className="flex flex-col rounded-2xl border border-[var(--border)] bg-white p-6 md:h-[360px]">
+        <div className="grid gap-6 md:grid-cols-2 md:items-center">
+          <div className="flex flex-col justify-center">
             <p className="text-sm font-semibold text-[var(--epr-blue-800)]">
               Escápate a Taboga y vive una jornada única de playa, música en vivo y energía tropical.
             </p>
@@ -117,14 +119,14 @@ export default async function HomePage(): Promise<JSX.Element> {
               </div>
             </div>
 
-            <Link href="/packages" className="mt-5 w-full sm:w-auto">
+            <Link href="/packages" className="mt-6 w-full sm:w-auto">
               <Button size="lg" variant="accent" className="w-full sm:w-auto">
                 Elige tu paquete
               </Button>
             </Link>
           </div>
 
-          <div className="relative h-[280px] overflow-hidden rounded-3xl md:h-[360px]">
+          <div className="relative h-[300px] overflow-hidden rounded-3xl md:h-[360px]">
             <Image
               src="/assets/imagenes/taboga2026.png"
               alt="Vallenato y Salsa en Taboga 2026"
@@ -193,21 +195,21 @@ export default async function HomePage(): Promise<JSX.Element> {
             alt="Artista invitado 1"
             width={900}
             height={1200}
-            className="h-[28rem] w-full rounded-3xl object-cover md:h-[25rem] lg:h-[26rem]"
+            className="h-[min(22rem,58vh)] w-full rounded-3xl object-cover sm:h-[24rem] md:h-[25rem] lg:h-[26rem]"
           />
           <Image
             src="/assets/imagenes/artista2.jpeg"
             alt="Artista invitado 2"
             width={900}
             height={1200}
-            className="h-[28rem] w-full rounded-3xl object-cover md:h-[25rem] lg:h-[26rem]"
+            className="h-[min(22rem,58vh)] w-full rounded-3xl object-cover sm:h-[24rem] md:h-[25rem] lg:h-[26rem]"
           />
           <Image
             src="/assets/imagenes/artista3.jpeg"
             alt="Artista invitado 3"
             width={900}
             height={1200}
-            className="h-[28rem] w-full rounded-3xl object-cover md:h-[25rem] lg:h-[26rem]"
+            className="h-[min(22rem,58vh)] w-full rounded-3xl object-cover sm:h-[24rem] md:h-[25rem] lg:h-[26rem]"
           />
         </div>
       </section>

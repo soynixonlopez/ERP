@@ -7,6 +7,7 @@ import { isEmailNotConfirmedError, mapSignInError, mapSignUpError } from "@/lib/
 import { signInSchema, signUpSchema } from "@/lib/validations/auth";
 import { toProperCase } from "@/lib/utils/proper-case";
 import { sanitizeText } from "@/lib/utils/sanitize";
+import { logServerError } from "@/lib/logging/server-log";
 
 export type AuthActionState = {
   error?: string;
@@ -39,7 +40,7 @@ export async function signInAction(
     password: parsed.data.password
   });
   if (error) {
-    console.error("[signInAction]", (error as { code?: string }).code, error.message, error);
+    logServerError("signInAction", error);
     return {
       error: mapSignInError(error),
       hint: isEmailNotConfirmedError(error) ? "resend" : undefined
@@ -69,7 +70,7 @@ export async function resendSignupConfirmationAction(
   });
 
   if (error) {
-    console.error("[resendSignupConfirmationAction]", (error as { code?: string }).code, error.message, error);
+    logServerError("resendSignupConfirmationAction", error);
     return { error: mapSignUpError(error) };
   }
 
@@ -114,7 +115,7 @@ export async function signUpAction(
   });
 
   if (error) {
-    console.error("[signUpAction]", error.message, error);
+    logServerError("signUpAction", error);
     return { error: mapSignUpError(error) };
   }
 

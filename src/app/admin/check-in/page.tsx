@@ -17,8 +17,8 @@ export default async function AdminCheckInPage(): Promise<JSX.Element> {
       <div className="space-y-1">
         <h1 className="text-3xl font-black text-slate-900">Control de acceso</h1>
         <p className="max-w-2xl text-sm text-slate-600">
-          Escanea el QR del ticket (misma invitacion que ve el cliente). Varios telefonos o pistolas USB pueden operar a la
-          vez: la base evita doble ingreso por persona y el contador se actualiza para todos.
+          Elige el evento, valida con camara o entrada manual y revisa la lista cuando la necesites. Varios dispositivos a
+          la vez; no se duplica el ingreso por persona.
         </p>
       </div>
       <CheckInWorkspace organizationId={EPR_ORGANIZATION_ID} events={data ?? []} />

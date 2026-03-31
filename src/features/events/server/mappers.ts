@@ -69,20 +69,13 @@ function eventJoinOne(row: TicketRow): EventJoinRow | null {
 
 function eventBannerFromJoin(e: EventJoinRow | null): string {
   if (!e) return "";
-  return (
-    e.cover_image_url?.trim() ||
-    e.desktop_banner_url?.trim() ||
-    e.mobile_banner_url?.trim() ||
-    ""
-  );
+  return e.cover_image_url?.trim() || "";
 }
 
 export function mapEventRow(row: EventRow): EventCardData {
-  const banner =
-    row.cover_image_url?.trim() ||
-    row.desktop_banner_url?.trim() ||
-    row.mobile_banner_url?.trim() ||
-    "";
+  // En cards públicas usamos la portada vigente del evento.
+  // Evita mostrar banners heredados (desktop/mobile) que pueden quedar de datos antiguos.
+  const banner = row.cover_image_url?.trim() || "";
 
   return {
     id: row.id,

@@ -15,6 +15,25 @@ const supabaseHost = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // Evita que el bundler altere el paquete del escáner (getUserMedia / video).
+  serverExternalPackages: ["html5-qrcode"],
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            // camera=(self) permite el escáner QR en control de acceso; () lo bloqueaba por completo
+            value: "camera=(self), microphone=(), geolocation=(), payment=()"
+          }
+        ]
+      }
+    ];
+  },
   // Evita que Turbopack tome otro directorio si hay otro package-lock.json en carpetas padre.
   turbopack: {
     root: projectRoot

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { canAccessAdminPanel } from "@/lib/auth/admin-access";
 import { EPR_ORGANIZATION_ID } from "@/features/events/data";
+import { logServerError } from "@/lib/logging/server-log";
 
 const BUCKET = "promotional";
 
@@ -26,7 +27,7 @@ function friendlyDbError(message: string): string {
     m.includes("42501") ||
     m.includes("violates row-level security")
   ) {
-    return "Sin permiso en base de datos: añade SUPABASE_SERVICE_ROLE_KEY en el servidor y vuelve a entrar en /admin (se crea la membresía automática), o inserta tu usuario en organization_members con rol admin/staff.";
+    return "No se pudo guardar por permisos en la base de datos. Si eres administrador, revisa la configuración del servidor o contacta soporte.";
   }
   return message;
 }
@@ -71,7 +72,7 @@ async function uploadImageIfPresent(
     upsert: false
   });
   if (error) {
-    console.error("[uploadImageIfPresent]", fieldName, error);
+    logServerError("uploadImageIfPresent", error, { field: fieldName });
     throw new Error(friendlyStorageError(error.message || "No se pudo subir la imagen"));
   }
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
@@ -164,7 +165,7 @@ export async function saveEventAction(
         .eq("id", id)
         .eq("organization_id", EPR_ORGANIZATION_ID);
       if (error) {
-        console.error("[saveEventAction] update", error);
+        logServerError("saveEventAction.update", error);
         return {
           ok: false,
           error: error.message.includes("unique")
@@ -175,7 +176,7 @@ export async function saveEventAction(
     } else {
       const { error } = await supabase.from("events").insert(payload);
       if (error) {
-        console.error("[saveEventAction] insert", error);
+        logServerError("saveEventAction.insert", error);
         return {
           ok: false,
           error: error.message.includes("unique")
@@ -256,13 +257,13 @@ export async function saveTicketAction(
         .eq("id", id)
         .eq("organization_id", EPR_ORGANIZATION_ID);
       if (error) {
-        console.error("[saveTicketAction] update", error);
+        logServerError("saveTicketAction.update", error);
         return { ok: false, error: friendlyDbError(error.message) };
       }
     } else {
       const { error } = await supabase.from("ticket_types").insert({ ...row, sold: 0 });
       if (error) {
-        console.error("[saveTicketAction] insert", error);
+        logServerError("saveTicketAction.insert", error);
         return { ok: false, error: friendlyDbError(error.message) };
       }
     }
@@ -300,7 +301,7 @@ export async function deleteEventAction(eventId: string): Promise<CatalogActionR
       .eq("event_id", eventId);
 
     if (countError) {
-      console.error("[deleteEventAction] count", countError);
+      logServerError("deleteEventAction.count", countError);
       return { ok: false, error: friendlyDbError(countError.message) };
     }
     if (count && count > 0) {
@@ -317,7 +318,7 @@ export async function deleteEventAction(eventId: string): Promise<CatalogActionR
       .eq("organization_id", EPR_ORGANIZATION_ID);
 
     if (error) {
-      console.error("[deleteEventAction] delete", error);
+      logServerError("deleteEventAction.delete", error);
       return { ok: false, error: friendlyDbError(error.message) };
     }
 
@@ -343,7 +344,7 @@ export async function deleteTicketAction(ticketId: string): Promise<CatalogActio
       .eq("ticket_type_id", ticketId);
 
     if (countError) {
-      console.error("[deleteTicketAction] count", countError);
+      logServerError("deleteTicketAction.count", countError);
       return { ok: false, error: friendlyDbError(countError.message) };
     }
     if (count && count > 0) {
@@ -360,7 +361,7 @@ export async function deleteTicketAction(ticketId: string): Promise<CatalogActio
       .eq("organization_id", EPR_ORGANIZATION_ID);
 
     if (error) {
-      console.error("[deleteTicketAction] delete", error);
+      logServerError("deleteTicketAction.delete", error);
       return { ok: false, error: friendlyDbError(error.message) };
     }
 

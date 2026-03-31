@@ -35,19 +35,23 @@ export function EventCard({ event }: EventCardProps): JSX.Element {
         </div>
       )}
       <CardContent className="space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-lg font-bold text-[var(--epr-blue-800)]">{event.title}</h3>
-          <Badge tone={isActive ? "success" : "warning"}>{badgeText}</Badge>
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <h3 className="min-w-0 flex-1 pr-2 text-lg font-bold leading-snug text-[var(--epr-blue-800)] break-words">
+            {event.title}
+          </h3>
+          <Badge className="shrink-0" tone={isActive ? "success" : "warning"}>
+            {badgeText}
+          </Badge>
         </div>
         <p className="text-sm text-slate-600">{event.shortDescription}</p>
         <div className="space-y-1 text-sm text-slate-700">
-          <p className="flex items-center gap-2">
-            <CalendarDays className="size-4 text-[var(--primary)]" />
-            {formatEventSchedule(event.startAt, event.endAt)}
+          <p className="flex min-w-0 items-start gap-2">
+            <CalendarDays className="mt-0.5 size-4 shrink-0 text-[var(--primary)]" />
+            <span className="min-w-0 break-words">{formatEventSchedule(event.startAt, event.endAt)}</span>
           </p>
-          <p className="flex items-center gap-2">
-            <MapPin className="size-4 text-[var(--primary)]" />
-            {event.location}
+          <p className="flex min-w-0 items-start gap-2">
+            <MapPin className="mt-0.5 size-4 shrink-0 text-[var(--primary)]" />
+            <span className="min-w-0 break-words">{event.location}</span>
           </p>
         </div>
         {isActive || event.status === "sold_out" ? (

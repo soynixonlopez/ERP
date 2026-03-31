@@ -91,7 +91,7 @@ export function ReservationActionSelect({
 
   return (
     <div
-      className="flex min-w-[260px] max-w-[min(100vw-2rem,420px)] flex-nowrap items-center gap-1.5"
+      className="flex w-full min-w-0 max-w-full flex-wrap items-center gap-1.5 sm:max-w-[min(100vw-2rem,28rem)] sm:flex-nowrap"
       role="group"
       aria-label="Acciones de reserva"
     >
@@ -101,7 +101,7 @@ export function ReservationActionSelect({
           setAction(e.target.value as ReservationAction);
           setFeedback(null);
         }}
-        className="h-9 w-[min(11rem,42vw)] shrink-0 rounded-lg border border-[var(--border)] bg-white px-2 text-sm"
+        className="h-9 min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-white px-2 text-sm sm:w-44 sm:flex-none"
         disabled={loading}
       >
         <option value="approve" disabled={paid}>
@@ -124,7 +124,7 @@ export function ReservationActionSelect({
       </Button>
       {feedback ? (
         <span
-          className={`min-w-0 max-w-[12rem] truncate text-xs leading-tight sm:max-w-[14rem] ${feedback.kind === "ok" ? "text-emerald-700" : "text-red-600"}`}
+          className={`w-full basis-full break-words text-xs leading-snug sm:w-auto sm:basis-auto sm:max-w-[14rem] ${feedback.kind === "ok" ? "text-emerald-700" : "text-red-600"}`}
           title={feedback.text}
           role="status"
         >

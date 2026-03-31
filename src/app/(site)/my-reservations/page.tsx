@@ -10,6 +10,7 @@ import {
   inviteTicketDataFromReservationAndAttendee,
   type ReservationEmbedForTicket
 } from "@/lib/invites/get-invite-ticket-data";
+import { reservationPaymentBadgeLine } from "@/lib/labels/reservation-status";
 import { packageLabelFromItems, type ReservationItemForLabel } from "@/lib/reservations/package-label";
 
 export const dynamic = "force-dynamic";
@@ -89,7 +90,7 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
 
   if (error) {
     return (
-      <section className="mx-auto w-full max-w-3xl space-y-4">
+      <section className="mx-auto w-full max-w-3xl space-y-4 print:hidden">
         <p className="text-sm text-red-600">
           No se pudieron cargar las reservas. Verifica que la base de datos tenga las políticas actualizadas.
         </p>
@@ -101,22 +102,27 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
   const baseUrl = getAppBaseUrl();
 
   return (
-    <section className="mx-auto w-full max-w-3xl space-y-6">
-      <div className="relative inline-block">
-        <h1 className="text-4xl font-black tracking-tight text-[var(--epr-blue-800)]">Mis reservas</h1>
-        <div className="mt-1 h-1 w-24 bg-[var(--accent)]" />
-      </div>
-      <p className="text-sm text-slate-600">
-        Listado de tus compras. Cuando el administrador confirme el pago, veras aqui el mismo ticket digital que en la
-        entrada del evento: puedes imprimirlo, descargar el QR o guardarlo como PDF desde el navegador.
-      </p>
+    <section className="mx-auto w-full max-w-3xl space-y-6 print:max-w-none print:space-y-0">
+      <div className="print:hidden">
+        <div className="relative inline-block">
+          <h1 className="text-4xl font-black tracking-tight text-[var(--epr-blue-800)]">Mis reservas</h1>
+          <div className="mt-1 h-1 w-24 bg-[var(--accent)]" />
+        </div>
+        <p className="text-sm text-slate-600">
+          Listado de tus compras. Cuando el administrador confirme el pago, veras aqui el mismo ticket digital que en la
+          entrada del evento: puedes imprimirlo, descargar el QR o guardarlo como PDF desde el navegador.
+        </p>
 
-      {rows.length ? (
-        <>
+        {rows.length ? (
           <p className="text-sm font-semibold text-slate-800">
             {rows.length === 1 ? "1 reserva" : `${rows.length} reservas`} en tu cuenta
           </p>
-          <ol className="grid list-none gap-8 p-0">
+        ) : null}
+      </div>
+
+      {rows.length ? (
+        <>
+          <ol className="grid list-none gap-8 p-0 print:gap-0">
             {rows.map((reservation, index) => {
               const eventTitle = getEventTitle(reservation.events);
               const packageLabel = packageLabelFromItems(reservation.reservation_items);
@@ -143,7 +149,7 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
                     <p className="text-sm font-semibold text-[var(--epr-blue-800)]">{eventTitle}</p>
                     <p className="text-base font-bold text-slate-900">{reservation.reservation_number}</p>
                     <p className="text-xs text-slate-500">
-                      Estado: {reservation.status} · Pago: {reservation.payment_status}
+                      {reservationPaymentBadgeLine(reservation.status, reservation.payment_status)}
                     </p>
                     <p className="text-xs text-slate-600">
                       Paquete: <span className="font-medium text-slate-800">{packageLabel}</span>
@@ -156,9 +162,14 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
               );
 
               return (
-                <li key={reservation.id}>
-                  <Card className="rounded-2xl print:border-0 print:shadow-none">
-                    <CardContent className="space-y-4 p-5">
+                <li
+                  key={reservation.id}
+                  className={
+                    index < rows.length - 1 ? "print:break-after-page" : undefined
+                  }
+                >
+                  <Card className="rounded-2xl print:border-0 print:bg-transparent print:shadow-none">
+                    <CardContent className="space-y-4 p-5 print:p-0">
                       {ticketData ? (
                         <MyReservationEntry
                           summary={summary}
@@ -207,7 +218,7 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
           </ol>
         </>
       ) : (
-        <p className="text-sm text-slate-600">Todavía no tienes reservas registradas.</p>
+        <p className="text-sm text-slate-600 print:hidden">Todavía no tienes reservas registradas.</p>
       )}
     </section>
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 
 type MyReservationEntryProps = {
   /** Bloque izquierdo: datos de la reserva (servidor). */
@@ -25,8 +26,8 @@ export function MyReservationEntry({
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-4 print:hidden">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">{summary}</div>
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-4 print:hidden">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">{summary}</div>
         <div className="flex flex-col gap-2 sm:items-end">
           {paymentApproved ? (
             <span className="inline-flex h-10 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 text-sm font-semibold text-emerald-800">
@@ -47,8 +48,13 @@ export function MyReservationEntry({
         </div>
       </div>
 
-      {inviteUrl && ticketOpen ? (
-        <div className="space-y-3 pt-4 print:space-y-0 print:pt-0">
+      {inviteUrl ? (
+        <div
+          className={cn(
+            "space-y-3 pt-4 print:space-y-0 print:pt-0",
+            !ticketOpen && "hidden print:block"
+          )}
+        >
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 print:hidden">
             Tu entrada digital (mismo formato que valida el equipo en acceso)
           </p>

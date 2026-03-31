@@ -8,12 +8,8 @@ export { EPR_ORGANIZATION_ID };
 const ADMIN_ROLES: OrganizationRole[] = ["owner", "admin", "staff"];
 
 function adminEmailsFromEnv(): string[] {
-  const raw =
-    process.env.ADMIN_EMAILS ??
-    process.env.ADMIN_EMAIL ??
-    process.env.NEXT_PUBLIC_ADMIN_EMAILS ??
-    process.env.NEXT_PUBLIC_ADMIN_EMAIL ??
-    "";
+  // Solo variables de servidor (no NEXT_PUBLIC_*): evita filtrar correos admin al bundle del cliente.
+  const raw = process.env.ADMIN_EMAILS ?? process.env.ADMIN_EMAIL ?? "";
   return raw
     .split(",")
     .map((s) => s.trim().replace(/^["']|["']$/g, "").toLowerCase())

@@ -62,9 +62,9 @@ export function AdminShell({ children }: AdminShellProps): React.JSX.Element {
         </div>
 
         <form action={signOutAction}>
-          <Button type="submit" variant="secondary" size="sm" className="gap-2">
-            <LogOut className="size-4" aria-hidden />
-            Cerrar sesión
+          <Button type="submit" variant="secondary" size="sm" className="gap-1.5 px-2 sm:gap-2 sm:px-3">
+            <LogOut className="size-4 shrink-0" aria-hidden />
+            <span className="max-sm:sr-only">Cerrar sesión</span>
           </Button>
         </form>
       </header>
@@ -115,24 +115,32 @@ export function AdminShell({ children }: AdminShellProps): React.JSX.Element {
         </aside>
 
         {mobileOpen ? (
-          <aside className="fixed inset-y-14 left-0 z-40 w-60 border-r border-slate-200 bg-white p-3 shadow-lg md:hidden">
-            <nav className="space-y-1">
-              {nav.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                >
-                  <Icon className="size-4 shrink-0 text-slate-500" aria-hidden />
-                  <span>{label}</span>
-                </Link>
-              ))}
-            </nav>
-          </aside>
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 top-14 z-30 bg-black/40 md:hidden"
+              aria-label="Cerrar menu"
+              onClick={() => setMobileOpen(false)}
+            />
+            <aside className="fixed inset-y-14 left-0 z-40 w-[min(16rem,calc(100vw-1rem))] border-r border-slate-200 bg-white p-3 shadow-lg md:hidden">
+              <nav className="space-y-1">
+                {nav.map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    <Icon className="size-4 shrink-0 text-slate-500" aria-hidden />
+                    <span>{label}</span>
+                  </Link>
+                ))}
+              </nav>
+            </aside>
+          </>
         ) : null}
 
-        <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ type MetricsGridProps = {
 
 export function MetricsGrid({ metrics }: MetricsGridProps): JSX.Element {
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {metrics.map((metric) => (
         <Card key={metric.label}>
           <CardContent className="space-y-2">

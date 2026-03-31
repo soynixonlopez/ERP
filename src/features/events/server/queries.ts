@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logServerError } from "@/lib/logging/server-log";
 import { EPR_ORGANIZATION_ID } from "@/features/events/data";
 import type { EventCardData, TicketTypeData } from "@/features/events/types";
 import { mapEventRow, mapTicketRow, type TicketRow } from "@/features/events/server/mappers";
@@ -17,7 +18,7 @@ export async function fetchPublicEvents(organizationId: string = EPR_ORGANIZATIO
     .order("starts_at", { ascending: true });
 
   if (error || !data) {
-    console.error("[fetchPublicEvents]", error);
+    logServerError("fetchPublicEvents", error);
     return [];
   }
 
@@ -40,7 +41,7 @@ export async function fetchPublicEventById(
     .maybeSingle();
 
   if (error || !data) {
-    if (error) console.error("[fetchPublicEventById]", error);
+    if (error) logServerError("fetchPublicEventById", error);
     return null;
   }
 
@@ -63,7 +64,7 @@ export async function fetchPublicEventBySlug(
     .maybeSingle();
 
   if (error || !data) {
-    if (error) console.error("[fetchPublicEventBySlug]", error);
+    if (error) logServerError("fetchPublicEventBySlug", error);
     return null;
   }
 
@@ -106,7 +107,7 @@ export async function fetchPublicTickets(
     .order("sort_order", { ascending: true });
 
   if (error || !data) {
-    console.error("[fetchPublicTickets]", error);
+    logServerError("fetchPublicTickets", error);
     return [];
   }
 
@@ -159,7 +160,7 @@ export async function fetchPublicTicketById(ticketId: string): Promise<TicketTyp
     .maybeSingle();
 
   if (error || !data) {
-    if (error) console.error("[fetchPublicTicketById]", error);
+    if (error) logServerError("fetchPublicTicketById", error);
     return null;
   }
 
@@ -177,7 +178,7 @@ export async function fetchAdminEvents(organizationId: string = EPR_ORGANIZATION
     .order("starts_at", { ascending: false });
 
   if (error || !data) {
-    console.error("[fetchAdminEvents]", error);
+    logServerError("fetchAdminEvents", error);
     return [];
   }
 
@@ -197,7 +198,7 @@ export async function fetchAdminEventById(
     .maybeSingle();
 
   if (error || !data) {
-    if (error) console.error("[fetchAdminEventById]", error);
+    if (error) logServerError("fetchAdminEventById", error);
     return null;
   }
 
@@ -249,7 +250,7 @@ export async function fetchAdminTickets(organizationId: string = EPR_ORGANIZATIO
     .order("sort_order", { ascending: true });
 
   if (error || !data) {
-    console.error("[fetchAdminTickets]", error);
+    logServerError("fetchAdminTickets", error);
     return [];
   }
 
@@ -287,7 +288,7 @@ export async function fetchAdminTicketById(
     .maybeSingle();
 
   if (error || !data) {
-    if (error) console.error("[fetchAdminTicketById]", error);
+    if (error) logServerError("fetchAdminTicketById", error);
     return null;
   }
 

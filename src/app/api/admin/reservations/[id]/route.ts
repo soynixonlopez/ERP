@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireReservationAdminActor } from "@/lib/auth/organization";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { zPgUuid } from "@/lib/validations/zod-pg-uuid";
+import { logServerError } from "@/lib/logging/server-log";
 
 const cancelSchema = z.object({
   organizationId: zPgUuid
@@ -145,7 +146,7 @@ export async function DELETE(request: Request, { params }: RouteParams): Promise
             .eq("id", item.ticket_type_id)
             .eq("organization_id", organizationId);
           if (soldError) {
-            console.error("[DELETE reservation] restore inventory", soldError);
+            logServerError("deleteReservation.restoreInventory", soldError);
             return NextResponse.json({ error: "No se pudo actualizar el inventario al eliminar" }, { status: 500 });
           }
         }
@@ -160,7 +161,7 @@ export async function DELETE(request: Request, { params }: RouteParams): Promise
     .eq("organization_id", organizationId);
 
   if (paymentsDeleteError) {
-    console.error("[DELETE reservation] payments", paymentsDeleteError);
+    logServerError("deleteReservation.payments", paymentsDeleteError);
     return NextResponse.json({ error: "No se pudo eliminar los registros de pago asociados" }, { status: 500 });
   }
 
@@ -171,7 +172,7 @@ export async function DELETE(request: Request, { params }: RouteParams): Promise
     .eq("organization_id", organizationId);
 
   if (error) {
-    console.error("[DELETE reservation] reservation", error);
+    logServerError("deleteReservation.reservation", error);
     return NextResponse.json({ error: "No se pudo eliminar la reserva" }, { status: 500 });
   }
 

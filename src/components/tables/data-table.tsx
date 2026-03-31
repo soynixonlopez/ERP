@@ -30,7 +30,7 @@ export function DataTable<TData extends object>({ data, columns }: DataTableProp
 
   return (
     <div className="space-y-3">
-      <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-white">
+      <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-white [-webkit-overflow-scrolling:touch] touch-pan-x">
         <table className="w-full min-w-max text-sm">
           <thead className="border-b border-[var(--border)] bg-slate-50">
             {table.getHeaderGroups().map((headerGroup) => (

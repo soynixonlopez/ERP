@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeText } from "@/lib/utils/sanitize";
 import { checkoutSchema } from "@/features/checkout/validations";
 import { checkoutRateLimit, enforceRateLimit } from "@/lib/security/rate-limit";
+import { logServerError } from "@/lib/logging/server-log";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
@@ -55,9 +56,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     if (error) {
-      console.error("[checkout/reservations] RPC create_reservation", error);
+      logServerError("checkout/reservations.rpc", error);
       return NextResponse.json(
-        { error: error.message || "No fue posible crear la reserva" },
+        { error: "No fue posible crear la reserva. Intenta de nuevo o contacta soporte." },
         { status: 500 }
       );
     }
@@ -67,7 +68,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       reservationNumber: data?.reservation_number as string | undefined
     });
   } catch (e) {
-    console.error("[checkout/reservations]", e);
+    logServerError("checkout/reservations", e);
     return NextResponse.json({ error: "Error interno al crear la reserva" }, { status: 500 });
   }
 }

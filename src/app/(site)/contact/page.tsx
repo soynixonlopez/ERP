@@ -35,9 +35,11 @@ export default function ContactPage(): JSX.Element {
                 <p className="mt-0.5 size-5 rounded-full bg-[var(--accent)]/15 text-center text-xs font-black leading-5 text-[var(--accent)]">
                   @
                 </p>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900">Correo</p>
-                  <p className="break-all text-sm text-slate-600">ernestopuerta1124@gmail.com</p>
+                  <p className="text-[11px] leading-snug text-slate-600 break-words sm:text-sm">
+                    ernestopuerta1124@gmail.com
+                  </p>
                 </div>
               </div>
 

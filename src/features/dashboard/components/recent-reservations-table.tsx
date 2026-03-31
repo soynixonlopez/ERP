@@ -14,7 +14,7 @@ export function RecentReservationsTable({ rows }: RecentReservationsTableProps):
         {rows.length === 0 ? (
           <p className="text-sm text-slate-600">Aún no hay reservas registradas en la base de datos.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto [-webkit-overflow-scrolling:touch] touch-pan-x">
             <table className="w-full min-w-[680px] text-sm">
               <thead>
                 <tr className="border-b border-[var(--border)] text-left text-slate-500">

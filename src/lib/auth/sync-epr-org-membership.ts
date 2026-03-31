@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { EPR_ORGANIZATION_ID, hasAdminBypassCredentials } from "@/lib/auth/admin-access";
+import { logServerError, logServerWarn } from "@/lib/logging/server-log";
 
 /**
  * Si el usuario entra al panel por correo/metadatos pero RLS aún no lo ve en `organization_members`,
@@ -22,7 +23,7 @@ export async function syncEprOrgMembershipForAdminUser(user: User): Promise<void
     .maybeSingle();
 
   if (readError) {
-    console.warn("[syncEprOrgMembership] lectura members", readError.message);
+    logServerWarn("syncEprOrgMembership.read", readError.message);
     return;
   }
 
@@ -42,7 +43,7 @@ export async function syncEprOrgMembershipForAdminUser(user: User): Promise<void
         return;
       }
       if (error) {
-        console.warn("[syncEprOrgMembership] insert", error.message);
+        logServerWarn("syncEprOrgMembership.insert", error.message);
       }
       return;
     }
@@ -54,14 +55,14 @@ export async function syncEprOrgMembershipForAdminUser(user: User): Promise<void
         .eq("organization_id", EPR_ORGANIZATION_ID)
         .eq("user_id", user.id);
       if (error) {
-        console.warn("[syncEprOrgMembership] update viewer→admin", error.message);
+        logServerWarn("syncEprOrgMembership.promote", error.message);
       }
     }
   } catch (e) {
     if (e instanceof Error && e.message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
-      console.warn("[syncEprOrgMembership] Sin SUPABASE_SERVICE_ROLE_KEY: define la variable para auto-membresía.");
+      logServerWarn("syncEprOrgMembership", "service_role_missing");
       return;
     }
-    console.warn("[syncEprOrgMembership]", e);
+    logServerError("syncEprOrgMembership", e);
   }
 }

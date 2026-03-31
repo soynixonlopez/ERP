@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { InviteTicketQr } from "@/features/invites/components/invite-ticket-qr";
 import type { InviteTicketData } from "@/lib/invites/get-invite-ticket-data";
+import { reservationPaymentBadgeLine } from "@/lib/labels/reservation-status";
 import { formatEventDate } from "@/lib/utils/date";
 
 type InviteTicketArticleProps = {
@@ -22,7 +23,7 @@ export function InviteTicketArticle({
   return (
     <article
       id={articleId}
-      className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-lg print:border-slate-300 print:shadow-none"
+      className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-lg print:break-inside-avoid print:border-slate-300 print:shadow-none"
     >
       <div className="relative bg-gradient-to-r from-[var(--epr-blue-800)] to-[var(--primary)] px-5 py-4 text-white print:bg-[var(--epr-blue-800)]">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -35,13 +36,16 @@ export function InviteTicketArticle({
               className="h-11 w-auto max-w-[min(100%,220px)] shrink-0 object-contain object-left rounded-lg bg-white/95 px-2 py-1 shadow-sm"
               unoptimized
             />
-            <div>
+            <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/90">Entrada digital</p>
-              <h2 className="text-lg font-black leading-tight sm:text-xl">{data.eventTitle}</h2>
+              <h2 className="text-lg font-black leading-tight break-words sm:text-xl">{data.eventTitle}</h2>
             </div>
           </div>
-          <div className="shrink-0 text-right font-medium text-white/95">
-            <p className="font-mono text-base font-bold tracking-wide sm:text-lg" title="Referencia de reserva">
+          <div className="min-w-0 shrink-0 text-right font-medium text-white/95">
+            <p
+              className="max-w-[11rem] font-mono text-xs font-bold tracking-wide break-all text-right sm:max-w-none sm:text-base md:text-lg"
+              title="Referencia de reserva"
+            >
               {data.reservationNumber}
             </p>
           </div>
@@ -57,7 +61,7 @@ export function InviteTicketArticle({
               </span>
             ) : (
               <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
-                Estado: {data.reservationStatus} · Pago: {data.paymentStatus}
+                {reservationPaymentBadgeLine(data.reservationStatus, data.paymentStatus)}
               </span>
             )}
           </div>
@@ -67,9 +71,14 @@ export function InviteTicketArticle({
               <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Titular</dt>
               <dd className="mt-1 font-semibold text-slate-900">{data.attendeeName}</dd>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3">
+            <div className="min-w-0 rounded-xl bg-slate-50 p-3">
               <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Correo</dt>
-              <dd className="mt-1 break-all font-medium text-slate-800">{data.attendeeEmail ?? "—"}</dd>
+              <dd
+                className="mt-1 min-w-0 max-w-full text-[10px] font-medium leading-snug text-slate-800 break-words sm:text-xs md:text-sm"
+                title={data.attendeeEmail ?? undefined}
+              >
+                {data.attendeeEmail ?? "—"}
+              </dd>
             </div>
             <div className="rounded-xl bg-slate-50 p-3 sm:col-span-2">
               <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Evento</dt>
@@ -83,8 +92,8 @@ export function InviteTicketArticle({
 
           <div>
             <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-500">Paquete y montos</h3>
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <table className="w-full text-left text-sm">
+            <div className="min-w-0 overflow-x-auto rounded-xl border border-slate-200 [-webkit-overflow-scrolling:touch]">
+              <table className="w-full min-w-[280px] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-600">
                   <tr>
                     <th className="px-3 py-2">Paquete</th>

@@ -24,7 +24,9 @@ export default async function CheckoutConfirmationPage({
         <p className="text-sm font-semibold uppercase tracking-wide text-white/95">
           Reserva pendiente de pago
         </p>
-        <h1 className="mt-2 text-3xl font-black text-white">Tu solicitud fue registrada</h1>
+        <h1 className="mt-2 !text-center text-3xl font-black text-white">
+          Tu solicitud fue registrada
+        </h1>
         <p className="mt-4 text-white/90">
           Numero de reserva:{" "}
           <span className="font-semibold text-white">{params.reservation ?? "pendiente"}</span>

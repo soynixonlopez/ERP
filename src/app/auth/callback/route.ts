@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { getClientEnv } from "@/lib/supabase/env";
 import { getPostLoginRedirectPath } from "@/lib/auth/admin-access";
+import { logServerError } from "@/lib/logging/server-log";
 
 /**
  * PKCE: Supabase redirige aquí tras confirmar correo u OAuth (?code=...).
@@ -51,7 +52,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    console.error("[auth/callback] exchangeCodeForSession", error.message, error);
+    logServerError("auth/callback.exchangeCodeForSession", error);
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(error.message || "No se pudo completar el inicio de sesion")}`
     );

@@ -1,5 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { logRateLimiterUnavailable } from "@/lib/logging/server-log";
 
 const redis =
   process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
@@ -32,6 +33,11 @@ export async function enforceRateLimit(
     return { success: true, remaining: 9999 };
   }
 
-  const result = await limiter.limit(key);
-  return { success: result.success, remaining: result.remaining };
+  try {
+    const result = await limiter.limit(key);
+    return { success: result.success, remaining: result.remaining };
+  } catch {
+    logRateLimiterUnavailable();
+    return { success: true, remaining: 9999 };
+  }
 }
