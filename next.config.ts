@@ -19,9 +19,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot
   },
-  // Formularios de evento/paquetes envían varias imágenes en un solo Server Action (límite por defecto 1 MB).
-  serverActions: {
-    bodySizeLimit: "25mb"
+  experimental: {
+    // Sin esto, el cuerpo se trunca a ~10 MB al clonar la request (middleware/proxy)
+    // y las subidas multipart a Server Actions fallan con "Unexpected end of form".
+    proxyClientMaxBodySize: "25mb",
+    serverActions: {
+      bodySizeLimit: "25mb"
+    }
   },
   images: {
     remotePatterns: [

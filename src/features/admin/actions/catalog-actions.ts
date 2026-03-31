@@ -4,12 +4,18 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { canAccessAdminPanel } from "@/lib/auth/admin-access";
 import { EPR_ORGANIZATION_ID } from "@/features/events/data";
-import { parseEventMetadata } from "@/features/events/server/metadata";
-import type { EventHomepageBlock } from "@/features/events/types";
 
 const BUCKET = "promotional";
 
 export type CatalogActionResult = { ok: true } | { ok: false; error: string };
+
+function friendlyStorageError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("exceeded the maximum allowed size") || m.includes("entity too large")) {
+    return "La imagen supera el tamaño máximo del bucket (25 MB). Comprime la foto, usa un archivo más pequeño o pega una URL.";
+  }
+  return message;
+}
 
 function friendlyDbError(message: string): string {
   const m = message.toLowerCase();
@@ -66,7 +72,7 @@ async function uploadImageIfPresent(
   });
   if (error) {
     console.error("[uploadImageIfPresent]", fieldName, error);
-    throw new Error(error.message || "No se pudo subir la imagen");
+    throw new Error(friendlyStorageError(error.message || "No se pudo subir la imagen"));
   }
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
@@ -80,46 +86,6 @@ function str(formData: FormData, key: string): string {
 function optionalStr(formData: FormData, key: string): string | undefined {
   const s = str(formData, key);
   return s.length > 0 ? s : undefined;
-}
-
-function bulletsFromTextarea(text: string): string[] | undefined {
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  return lines.length > 0 ? lines : undefined;
-}
-
-function buildHomepageFromForm(formData: FormData): EventHomepageBlock {
-  const bullets = bulletsFromTextarea(str(formData, "hp_storyBullets"));
-  return {
-    featured: formData.get("hp_block_featured") === "on",
-    heroTitle: optionalStr(formData, "hp_heroTitle"),
-    heroSubtitle: optionalStr(formData, "hp_heroSubtitle"),
-    dateLine: optionalStr(formData, "hp_dateLine"),
-    locationLine: optionalStr(formData, "hp_locationLine"),
-    storyTitle: optionalStr(formData, "hp_storyTitle"),
-    storyLead: optionalStr(formData, "hp_storyLead"),
-    storyBody: optionalStr(formData, "hp_storyBody"),
-    storyBullets: bullets
-  };
-}
-
-function mergeEventMetadata(existing: unknown, formData: FormData): Record<string, unknown> {
-  const prev = parseEventMetadata(existing);
-  const homepage = buildHomepageFromForm(formData);
-  const rootFeatured = formData.get("metadata_homepage_featured") === "on";
-
-  return {
-    ...(typeof existing === "object" && existing !== null && !Array.isArray(existing)
-      ? (existing as Record<string, unknown>)
-      : {}),
-    homepage_featured: rootFeatured || homepage.featured === true,
-    homepage: {
-      ...prev.homepage,
-      ...homepage
-    }
-  };
 }
 
 /**
@@ -151,7 +117,7 @@ export async function saveEventAction(
       coverUrl = uploadedCover;
     }
 
-    let existingMeta: unknown = {};
+    let metadata: Record<string, unknown> = {};
     if (id) {
       const { data: row } = await supabase
         .from("events")
@@ -159,53 +125,11 @@ export async function saveEventAction(
         .eq("id", id)
         .eq("organization_id", EPR_ORGANIZATION_ID)
         .maybeSingle();
-      existingMeta = row?.metadata ?? {};
-    }
-
-    let metadata = mergeEventMetadata(existingMeta, formData);
-    const prevHp = parseEventMetadata(existingMeta).homepage;
-
-    const [uploadedHero, uploadedStory, uploadedArtist1, uploadedArtist2, uploadedArtist3] =
-      await Promise.all([
-        uploadImageIfPresent(supabase, "hp_hero_file", formData, "hero"),
-        uploadImageIfPresent(supabase, "hp_story_file", formData, "story"),
-        uploadImageIfPresent(supabase, "hp_artist_file_1", formData, "artist"),
-        uploadImageIfPresent(supabase, "hp_artist_file_2", formData, "artist"),
-        uploadImageIfPresent(supabase, "hp_artist_file_3", formData, "artist")
-      ]);
-
-    const hpBase =
-      typeof metadata.homepage === "object" && metadata.homepage !== null && !Array.isArray(metadata.homepage)
-        ? (metadata.homepage as Record<string, unknown>)
-        : {};
-
-    const heroImage = uploadedHero ?? prevHp.heroImage;
-    const storyUrl = str(formData, "hp_storyImage");
-    const storyImage =
-      uploadedStory ?? (storyUrl.length > 0 ? storyUrl : undefined) ?? prevHp.storyImage;
-
-    const prevArt = prevHp.artistImages ?? [];
-    function resolveArtistSlot(i: 1 | 2 | 3, uploaded: string | null): string | undefined {
-      const url = str(formData, `hp_artist${i}`);
-      if (uploaded) return uploaded;
-      if (url.length > 0) return url;
-      return prevArt[i - 1];
-    }
-    const a1 = resolveArtistSlot(1, uploadedArtist1);
-    const a2 = resolveArtistSlot(2, uploadedArtist2);
-    const a3 = resolveArtistSlot(3, uploadedArtist3);
-    const artistBuilt = [a1, a2, a3].filter((x): x is string => Boolean(x));
-    const artistImages = artistBuilt.length > 0 ? artistBuilt : prevArt.length > 0 ? prevArt : undefined;
-
-    metadata = {
-      ...metadata,
-      homepage: {
-        ...hpBase,
-        heroImage,
-        storyImage,
-        artistImages
+      const raw = row?.metadata;
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        metadata = { ...(raw as Record<string, unknown>) };
       }
-    };
+    }
 
     const payload = {
       organization_id: EPR_ORGANIZATION_ID,

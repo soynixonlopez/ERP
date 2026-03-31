@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { saveEventAction, type CatalogActionResult } from "@/features/admin/actions/catalog-actions";
 import { ImageUrlOrFileField } from "@/features/admin/components/image-url-or-file-field";
 import type { AdminEventRow } from "@/features/events/server/queries";
-import { parseEventMetadata } from "@/features/events/server/metadata";
 
 function isoToDatetimeLocal(value: string): string {
   const d = new Date(value);
@@ -35,9 +34,6 @@ export function EventEditorForm({ initial }: EventEditorFormProps): React.JSX.El
   const router = useRouter();
   const slugTouched = useRef(false);
   const [title, setTitle] = useState(initial?.title ?? "");
-
-  const parsed = parseEventMetadata(initial?.metadata);
-  const hp = parsed.homepage;
 
   const [state, formAction, pending] = useActionState<CatalogActionResult | null, FormData>(
     saveEventAction,
@@ -194,180 +190,8 @@ export function EventEditorForm({ initial }: EventEditorFormProps): React.JSX.El
           nameFile="cover_file"
           label="Portada del evento"
           hint="Si una extensión del navegador bloquea el cuadro de adjunto, usa la URL o prueba en ventana de incógnito."
-          defaultUrl={initial?.cover_image_url}
+          defaultUrl={initial?.cover_image_url ?? undefined}
         />
-      </section>
-
-      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900">Homepage (evento destacado)</h2>
-        <p className="text-sm text-slate-600">
-          Marca un evento como destacado para alimentar el hero y las secciones inferiores de la página de inicio.
-        </p>
-
-        <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
-          <input
-            type="checkbox"
-            name="metadata_homepage_featured"
-            defaultChecked={parsed.homepage_featured}
-            className="size-4 rounded border-slate-300"
-          />
-          Usar como evento destacado en la homepage
-        </label>
-
-        <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
-          <input
-            type="checkbox"
-            name="hp_block_featured"
-            defaultChecked={hp.featured === true}
-            className="size-4 rounded border-slate-300"
-          />
-          Bloque interno: marcar como destacado (sincroniza con metadata)
-        </label>
-
-        <p className="text-xs text-slate-500">
-          Si varios tienen “destacado”, se usa el primero por fecha de inicio. Deja campos vacíos para usar título,
-          fechas y ubicación del evento.
-        </p>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="hp_heroTitle">
-              Hero — título
-            </label>
-            <Input id="hp_heroTitle" name="hp_heroTitle" defaultValue={hp.heroTitle ?? ""} />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="hp_heroSubtitle">
-              Hero — subtítulo
-            </label>
-            <Input id="hp_heroSubtitle" name="hp_heroSubtitle" defaultValue={hp.heroSubtitle ?? ""} />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <p className="text-sm font-semibold text-slate-700">Hero — imagen</p>
-          <p className="text-xs text-slate-500">
-            Solo archivo (Storage). Si no eliges uno nuevo, se mantiene la actual.
-          </p>
-          {hp.heroImage ? (
-            <p className="text-xs text-slate-500 break-all">Actual: {hp.heroImage}</p>
-          ) : null}
-          <div className="relative min-h-[3.5rem] overflow-hidden rounded-xl border-2 border-dashed border-[var(--epr-blue-800)]/40 bg-[var(--epr-blue-800)]/[0.07]">
-            <input
-              id="hp_hero_file"
-              name="hp_hero_file"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              autoComplete="off"
-              aria-label="Elegir imagen del hero"
-              className="absolute inset-0 z-[1] h-full min-h-[3.5rem] w-full cursor-pointer opacity-0"
-            />
-            <div className="pointer-events-none flex min-h-[3.5rem] items-center justify-center px-4 py-3.5 text-sm font-bold text-[var(--epr-blue-800)]">
-              Elegir imagen del hero
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="hp_dateLine">
-              Hero — línea de fecha (texto libre)
-            </label>
-            <Input id="hp_dateLine" name="hp_dateLine" defaultValue={hp.dateLine ?? ""} />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="hp_locationLine">
-              Hero — línea de ubicación
-            </label>
-            <Input id="hp_locationLine" name="hp_locationLine" defaultValue={hp.locationLine ?? ""} />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="hp_storyTitle">
-            Sección historia — título
-          </label>
-          <Input id="hp_storyTitle" name="hp_storyTitle" defaultValue={hp.storyTitle ?? ""} />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="hp_storyLead">
-            Sección historia — párrafo principal
-          </label>
-          <textarea
-            id="hp_storyLead"
-            name="hp_storyLead"
-            rows={2}
-            defaultValue={hp.storyLead ?? ""}
-            className="w-full rounded-lg border border-[var(--border)] bg-white px-3.5 py-2.5 text-base outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="hp_storyBody">
-            Sección historia — texto secundario
-          </label>
-          <textarea
-            id="hp_storyBody"
-            name="hp_storyBody"
-            rows={3}
-            defaultValue={hp.storyBody ?? ""}
-            className="w-full rounded-lg border border-[var(--border)] bg-white px-3.5 py-2.5 text-base outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="hp_storyBullets">
-            Viñetas (una por línea)
-          </label>
-          <textarea
-            id="hp_storyBullets"
-            name="hp_storyBullets"
-            rows={4}
-            defaultValue={hp.storyBullets?.join("\n") ?? ""}
-            className="w-full rounded-lg border border-[var(--border)] bg-white px-3.5 py-2.5 text-base outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-          />
-        </div>
-        <ImageUrlOrFileField
-          id="hp_storyImage"
-          nameUrl="hp_storyImage"
-          nameFile="hp_story_file"
-          label="Sección historia — imagen"
-          hint="Puedes pegar una URL o subir un archivo; si subes archivo, tiene prioridad."
-          defaultUrl={hp.storyImage}
-        />
-
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-700">Artistas — hasta 3 imágenes</p>
-            <p className="text-xs text-slate-500">
-              Cada bloque acepta URL o archivo. La subida a Storage tiene prioridad sobre el enlace.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-3">
-            <ImageUrlOrFileField
-              id="hp_artist1"
-              nameUrl="hp_artist1"
-              nameFile="hp_artist_file_1"
-              label="Artista 1"
-              defaultUrl={hp.artistImages?.[0]}
-              placeholderUrl="https://…"
-            />
-            <ImageUrlOrFileField
-              id="hp_artist2"
-              nameUrl="hp_artist2"
-              nameFile="hp_artist_file_2"
-              label="Artista 2"
-              defaultUrl={hp.artistImages?.[1]}
-              placeholderUrl="https://…"
-            />
-            <ImageUrlOrFileField
-              id="hp_artist3"
-              nameUrl="hp_artist3"
-              nameFile="hp_artist_file_3"
-              label="Artista 3"
-              defaultUrl={hp.artistImages?.[2]}
-              placeholderUrl="https://…"
-            />
-          </div>
-        </div>
       </section>
 
       <div className="flex flex-wrap gap-3">

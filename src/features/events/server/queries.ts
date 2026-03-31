@@ -2,41 +2,15 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { EPR_ORGANIZATION_ID } from "@/features/events/data";
 import type { EventCardData, TicketTypeData } from "@/features/events/types";
 import { mapEventRow, mapTicketRow, type TicketRow } from "@/features/events/server/mappers";
-import { parseEventMetadata, type ParsedEventMetadata } from "@/features/events/server/metadata";
 
 type EventDbRow = Parameters<typeof mapEventRow>[0] & { metadata?: unknown };
-
-export type FeaturedEventBundle = {
-  event: EventCardData;
-  parsed: ParsedEventMetadata;
-};
-
-function pickFeatured(rows: EventDbRow[]): FeaturedEventBundle | null {
-  if (!rows.length) {
-    return null;
-  }
-
-  const withMeta = rows.map((r) => ({
-    row: r,
-    card: mapEventRow(r),
-    parsed: parseEventMetadata(r.metadata)
-  }));
-
-  const flagged = withMeta.find((x) => x.parsed.homepage_featured);
-  const chosen = flagged ?? withMeta[0];
-  if (!chosen) {
-    return null;
-  }
-
-  return { event: chosen.card, parsed: chosen.parsed };
-}
 
 export async function fetchPublicEvents(organizationId: string = EPR_ORGANIZATION_ID): Promise<EventCardData[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("events")
     .select(
-      "id, organization_id, title, slug, description, short_description, location, starts_at, ends_at, status, cover_image_url, desktop_banner_url, mobile_banner_url, metadata"
+      "id, organization_id, title, slug, description, short_description, location, starts_at, ends_at, status, cover_image_url, desktop_banner_url, mobile_banner_url"
     )
     .eq("organization_id", organizationId)
     .in("status", ["published", "upcoming", "sold_out"])
@@ -190,27 +164,6 @@ export async function fetchPublicTicketById(ticketId: string): Promise<TicketTyp
   }
 
   return mapTicketRow(data as unknown as TicketRow);
-}
-
-export async function fetchFeaturedHomepageBundle(
-  organizationId: string = EPR_ORGANIZATION_ID
-): Promise<FeaturedEventBundle | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("events")
-    .select(
-      "id, organization_id, title, slug, description, short_description, location, starts_at, ends_at, status, cover_image_url, desktop_banner_url, mobile_banner_url, metadata"
-    )
-    .eq("organization_id", organizationId)
-    .in("status", ["published", "upcoming", "sold_out"])
-    .order("starts_at", { ascending: true });
-
-  if (error || !data?.length) {
-    if (error) console.error("[fetchFeaturedHomepageBundle]", error);
-    return null;
-  }
-
-  return pickFeatured(data as EventDbRow[]);
 }
 
 export type AdminEventRow = EventDbRow;

@@ -4,7 +4,7 @@ import { MapPin, CalendarDays } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatEventDate } from "@/lib/utils/date";
+import { formatEventSchedule } from "@/lib/utils/date";
 import type { EventCardData } from "@/features/events/types";
 
 type EventCardProps = {
@@ -43,7 +43,7 @@ export function EventCard({ event }: EventCardProps): JSX.Element {
         <div className="space-y-1 text-sm text-slate-700">
           <p className="flex items-center gap-2">
             <CalendarDays className="size-4 text-[var(--primary)]" />
-            {formatEventDate(event.startAt)}
+            {formatEventSchedule(event.startAt, event.endAt)}
           </p>
           <p className="flex items-center gap-2">
             <MapPin className="size-4 text-[var(--primary)]" />

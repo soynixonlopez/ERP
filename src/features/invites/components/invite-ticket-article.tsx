@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { InviteTicketAccessFallback } from "@/features/invites/components/invite-ticket-access-fallback";
 import { InviteTicketQr } from "@/features/invites/components/invite-ticket-qr";
 import type { InviteTicketData } from "@/lib/invites/get-invite-ticket-data";
 import { formatEventDate } from "@/lib/utils/date";
@@ -41,9 +40,10 @@ export function InviteTicketArticle({
               <h2 className="text-lg font-black leading-tight sm:text-xl">{data.eventTitle}</h2>
             </div>
           </div>
-          <div className="text-right text-xs font-medium text-white/95">
-            <p className="font-mono text-sm font-bold tracking-wide">{data.reservationNumber}</p>
-            <p className="mt-0.5 text-[10px] uppercase text-white/80">Numero de reserva</p>
+          <div className="shrink-0 text-right font-medium text-white/95">
+            <p className="font-mono text-base font-bold tracking-wide sm:text-lg" title="Referencia de reserva">
+              {data.reservationNumber}
+            </p>
           </div>
         </div>
       </div>
@@ -137,18 +137,13 @@ export function InviteTicketArticle({
           </div>
         </div>
 
-        <div className="flex justify-center sm:justify-end print:break-inside-avoid">
+        <div className="flex flex-col items-center justify-center sm:items-end print:break-inside-avoid">
           <InviteTicketQr inviteUrl={invitationUrl} fileSlug={fileSlug} />
         </div>
       </div>
 
-      <div className="border-t border-slate-200 px-5 py-5 sm:px-6 print:break-inside-avoid">
-        <InviteTicketAccessFallback invitationUrl={invitationUrl} qrToken={data.qrToken} />
-      </div>
-
       <div className="border-t border-dashed border-slate-200 bg-slate-50 px-5 py-3 text-center text-[10px] text-slate-600 print:bg-white">
-        Documento emitido tras confirmación de pago. Consérvelo para el ingreso; en acceso se validará el QR o, en su
-        defecto, la URL o el identificador indicados arriba.
+        Documento emitido tras confirmación de pago. Consérvelo y preséntelo en el acceso al evento.
       </div>
     </article>
   );

@@ -14,7 +14,7 @@ values (
   'promotional',
   'promotional',
   true,
-  5242880,
+  26214400,
   array['image/jpeg', 'image/png', 'image/webp', 'image/gif']::text[]
 )
 on conflict (id) do nothing;

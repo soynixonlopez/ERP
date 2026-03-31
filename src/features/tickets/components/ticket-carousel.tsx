@@ -34,7 +34,7 @@ export function TicketCarousel({ tickets }: TicketCarouselProps): React.JSX.Elem
   if (sortedTickets.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-[var(--border)] bg-white px-6 py-10 text-center text-sm text-slate-600">
-        Cuando haya paquetes publicados para el evento destacado, aparecerán aquí en carrusel.
+        Cuando publiques paquetes activos y visibles en el panel admin, aparecerán aquí automáticamente.
       </p>
     );
   }

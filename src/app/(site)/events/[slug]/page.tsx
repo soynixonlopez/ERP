@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { MapPin, CalendarDays } from "lucide-react";
 import { fetchPublicEventBySlug, fetchPublicTicketsForEvent } from "@/features/events/server/queries";
 import { TicketCard } from "@/features/tickets/components/ticket-card";
-import { formatEventDate } from "@/lib/utils/date";
+import { formatEventSchedule } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -35,11 +35,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps):
 
       <section className="space-y-4">
         <h1 className="text-4xl font-black tracking-tight text-[var(--epr-blue-800)] md:text-5xl">{event.title}</h1>
-        <p className="max-w-4xl text-slate-600">{event.description}</p>
+        <p className="max-w-4xl whitespace-pre-line text-slate-600 leading-relaxed">{event.description}</p>
         <div className="space-y-1 text-sm text-slate-700">
           <p className="flex items-center gap-2">
             <CalendarDays className="size-4 text-[var(--primary)]" />
-            {formatEventDate(event.startAt)}
+            {formatEventSchedule(event.startAt, event.endAt)}
           </p>
           <p className="flex items-center gap-2">
             <MapPin className="size-4 text-[var(--primary)]" />

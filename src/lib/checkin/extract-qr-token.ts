@@ -30,7 +30,7 @@ export function extractInviteTokenFromScan(raw: string): string {
     return uuidHit[0];
   }
 
-  return trimmed;
+  return "";
 }
 
 /** Indica si el token ya parseado tiene forma de UUID (validación visual en UI). */

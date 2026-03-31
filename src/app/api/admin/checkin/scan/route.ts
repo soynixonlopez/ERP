@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireReservationAdminActor } from "@/lib/auth/organization";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { extractInviteTokenFromScan } from "@/lib/checkin/extract-qr-token";
+import { parseReservationCheckInSuffix } from "@/lib/reservations/reservation-access-code";
 import { zPgUuid } from "@/lib/validations/zod-pg-uuid";
 
 const scanBodySchema = z.object({
@@ -24,20 +25,41 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const token = extractInviteTokenFromScan(parsed.data.raw);
-  if (!token) {
-    return NextResponse.json(
-      { ok: false, code: "INVALID_TOKEN", message: "No se pudo leer el codigo" },
-      { status: 400 }
-    );
-  }
-
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase.rpc("gate_register_checkin_by_qr", {
-    p_organization_id: parsed.data.organizationId,
-    p_event_id: parsed.data.eventId,
-    p_qr_token: token,
-    p_scanned_by: actor.userId
-  });
+
+  let data: unknown;
+  let error: { message?: string } | null;
+
+  if (token) {
+    const res = await supabase.rpc("gate_register_checkin_by_qr", {
+      p_organization_id: parsed.data.organizationId,
+      p_event_id: parsed.data.eventId,
+      p_qr_token: token,
+      p_scanned_by: actor.userId
+    });
+    data = res.data;
+    error = res.error;
+  } else {
+    const suffix = parseReservationCheckInSuffix(parsed.data.raw);
+    if (!suffix) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "INVALID_TOKEN",
+          message: "Use la URL o UUID del QR, o los 6 digitos del numero de reserva"
+        },
+        { status: 400 }
+      );
+    }
+    const res = await supabase.rpc("gate_register_checkin_by_reservation_suffix", {
+      p_organization_id: parsed.data.organizationId,
+      p_event_id: parsed.data.eventId,
+      p_suffix: suffix,
+      p_scanned_by: actor.userId
+    });
+    data = res.data;
+    error = res.error;
+  }
 
   if (error) {
     return NextResponse.json(

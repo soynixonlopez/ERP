@@ -2,22 +2,6 @@ export type EventStatus = "draft" | "published" | "sold_out" | "cancelled" | "up
 
 export type TicketVisibility = "public" | "hidden";
 
-/** Contenido opcional de homepage asociado al evento destacado (`events.metadata.homepage`). */
-export type EventHomepageBlock = {
-  featured?: boolean;
-  heroTitle?: string;
-  heroSubtitle?: string;
-  heroImage?: string;
-  dateLine?: string;
-  locationLine?: string;
-  storyTitle?: string;
-  storyLead?: string;
-  storyBody?: string;
-  storyBullets?: string[];
-  storyImage?: string;
-  artistImages?: string[];
-};
-
 export type EventCardData = {
   id: string;
   organizationId: string;

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GateQrScanner } from "@/features/check-in/components/gate-qr-scanner";
 import { extractInviteTokenFromScan, isLikelyInviteUuid } from "@/lib/checkin/extract-qr-token";
+import { parseReservationCheckInSuffix } from "@/lib/reservations/reservation-access-code";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatEventDate } from "@/lib/utils/date";
@@ -92,11 +93,13 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
       if (!eventId || !raw.trim()) return;
 
       const token = extractInviteTokenFromScan(raw);
+      const suffix = token ? null : parseReservationCheckInSuffix(raw);
+      const dedupeKey = token || suffix || raw.trim();
       const now = Date.now();
-      if (token && token === lastScanRef.current.token && now - lastScanRef.current.ts < 1600) {
+      if (dedupeKey && dedupeKey === lastScanRef.current.token && now - lastScanRef.current.ts < 1600) {
         return;
       }
-      if (token) lastScanRef.current = { token, ts: now };
+      if (dedupeKey) lastScanRef.current = { token: dedupeKey, ts: now };
 
       setBusy(true);
       try {
@@ -172,7 +175,10 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
   const selected = events.find((e) => e.id === eventId);
 
   const manualPreview = useMemo(() => extractInviteTokenFromScan(manual), [manual]);
-  const manualLooksValid = Boolean(manualPreview) && (manual.includes("/invite/") || isLikelyInviteUuid(manualPreview));
+  const manualSuffix = useMemo(() => parseReservationCheckInSuffix(manual), [manual]);
+  const manualLooksValid =
+    (Boolean(manualPreview) && (manual.includes("/invite/") || isLikelyInviteUuid(manualPreview))) ||
+    Boolean(manualSuffix);
 
   const submitManual = useCallback(() => {
     const raw = manual.trim();
@@ -232,7 +238,8 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-800">Entrada manual</h2>
           <p className="mt-1 text-xs text-slate-600">
-            Pegue la URL del ticket, una ruta que contenga <code className="rounded bg-slate-100 px-1 font-mono text-[11px]">/invite/</code> o el identificador UUID. Se acepta texto adicional (p. ej. cuerpo de correo).
+            Pegue la URL del ticket, el UUID del QR o los <strong>6 últimos números</strong> del número de reserva (también
+            puede pegar el número completo). Se acepta texto adicional (p. ej. cuerpo de correo).
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
             <Input
@@ -244,7 +251,7 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
                   submitManual();
                 }
               }}
-              placeholder="URL del ticket o UUID"
+              placeholder="URL, UUID o 6 dígitos de reserva"
               className="flex-1 font-mono text-xs sm:text-sm"
               disabled={busy || !eventId}
               autoComplete="off"
@@ -266,7 +273,7 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
               manualLooksValid ? (
                 <>Formato reconocido. Pulse Validar o Intro.</>
               ) : (
-                <>No se detecta un UUID ni una ruta /invite/; corrija el contenido e inténtelo de nuevo.</>
+                <>No se detecta URL/UUID del ticket ni 6 dígitos de reserva; corrija e inténtelo de nuevo.</>
               )
             ) : (
               <>Pulse Intro para enviar con el mismo efecto que Validar.</>

@@ -1,5 +1,30 @@
 import { format } from "date-fns";
 
+/** Fecha/hora en hora de Panamá (eventos públicos y catálogo). */
+export function formatEventDatePa(iso: string): string {
+  return new Date(iso).toLocaleString("es-PA", {
+    timeZone: "America/Panama",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
+}
+
+function dateKeyPanama(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Panama" });
+}
+
+/** Inicio (y fin si es otro día) para tarjetas y detalle de evento. */
+export function formatEventSchedule(isoStart: string, isoEnd: string): string {
+  if (dateKeyPanama(isoStart) === dateKeyPanama(isoEnd)) {
+    return formatEventDatePa(isoStart);
+  }
+  return `${formatEventDatePa(isoStart)} → ${formatEventDatePa(isoEnd)}`;
+}
+
 export function formatEventDate(date: string): string {
   return format(new Date(date), "dd/MM/yyyy HH:mm");
 }
