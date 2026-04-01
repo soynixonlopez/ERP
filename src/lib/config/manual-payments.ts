@@ -11,6 +11,31 @@ export function getManualPaymentConfig() {
   };
 }
 
+const DEFAULT_APP_URL = "http://localhost:3000";
+
+/**
+ * URL pública de la app (emails, QR, enlaces absolutos).
+ * Si en .env hay varias URLs separadas por coma (error común), se usa la primera válida.
+ */
 export function getAppBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!raw) return DEFAULT_APP_URL;
+
+  const candidates = raw
+    .split(/[,\n;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  for (const c of candidates) {
+    try {
+      const u = new URL(c);
+      if (u.protocol === "http:" || u.protocol === "https:") {
+        return u.origin;
+      }
+    } catch {
+      /* siguiente candidato */
+    }
+  }
+
+  return DEFAULT_APP_URL;
 }

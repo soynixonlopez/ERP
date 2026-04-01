@@ -17,6 +17,9 @@ const supabaseHost = (() => {
 const nextConfig: NextConfig = {
   // Evita que el bundler altere el paquete del escáner (getUserMedia / video).
   serverExternalPackages: ["html5-qrcode"],
+  async redirects() {
+    return [{ source: "/favicon.ico", destination: "/favicon.svg", permanent: false }];
+  },
   async headers() {
     return [
       {

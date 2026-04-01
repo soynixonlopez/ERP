@@ -21,6 +21,10 @@ export type InviteTicketData = {
   eventLocation: string | null;
   lines: InviteTicketLine[];
   total: number;
+  buyerCountry: string | null;
+  buyerAge: number | null;
+  /** Todas las personas registradas en la misma reserva (titular + invitados), en orden de registro. */
+  groupAttendeeNames: string[];
 };
 
 type TicketTypeRow = { name?: string; price?: number; badge_label?: string | null } | null;
@@ -37,8 +41,11 @@ export type ReservationEmbedForTicket = {
   status?: string;
   payment_status?: string;
   total?: number;
+  buyer_country?: string | null;
+  buyer_age?: number | null;
   events?: EventRow | EventRow[];
   reservation_items?: ReservationItemRow[] | null;
+  attendees?: Array<{ full_name?: string | null; created_at?: string | null }> | null;
 };
 
 function firstEvent(events: EventRow | EventRow[] | null | undefined): EventRow {
@@ -50,6 +57,14 @@ function ticketTypeFromItem(item: ReservationItemRow): TicketTypeRow {
   const tt = item.ticket_types;
   if (!tt) return null;
   return Array.isArray(tt) ? (tt[0] ?? null) : tt;
+}
+
+function groupNamesFromReservationEmbed(res: ReservationEmbedForTicket): string[] {
+  const raw = Array.isArray(res.attendees) ? [...res.attendees] : [];
+  raw.sort((a, b) => String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")));
+  return raw
+    .map((a) => (typeof a.full_name === "string" ? a.full_name.trim() : ""))
+    .filter((n) => n.length > 0);
 }
 
 function buildLines(rawItems: ReservationItemRow[]): InviteTicketLine[] {
@@ -79,6 +94,8 @@ export function inviteTicketDataFromReservationAndAttendee(
   const ev = firstEvent(res.events);
   const rawItems = Array.isArray(res.reservation_items) ? res.reservation_items : [];
 
+  const groupAttendeeNames = groupNamesFromReservationEmbed(res);
+
   return {
     attendeeName: attendee.full_name,
     attendeeEmail: attendee.email ?? null,
@@ -90,7 +107,14 @@ export function inviteTicketDataFromReservationAndAttendee(
     eventStartsAt: ev?.starts_at ?? null,
     eventLocation: ev?.location?.trim() ?? null,
     lines: buildLines(rawItems),
-    total: Number(res.total ?? 0)
+    total: Number(res.total ?? 0),
+    buyerCountry: res.buyer_country != null ? String(res.buyer_country).trim() || null : null,
+    buyerAge: (() => {
+      if (res.buyer_age == null || String(res.buyer_age).trim() === "") return null;
+      const n = Number(res.buyer_age);
+      return Number.isFinite(n) ? n : null;
+    })(),
+    groupAttendeeNames
   };
 }
 
@@ -116,13 +140,16 @@ export async function getInviteTicketData(token: string): Promise<InviteTicketDa
          status,
          payment_status,
          total,
+         buyer_country,
+         buyer_age,
          events ( title, starts_at, location ),
          reservation_items (
            quantity,
            unit_price,
            line_total,
            ticket_types ( name, price, badge_label )
-         )
+         ),
+         attendees ( full_name, created_at )
        )`
     )
     .eq("qr_code", trimmed)
@@ -154,12 +181,14 @@ export async function getInviteTicketDataForUserReservation(
     .from("reservations")
     .select(
       `reservation_number, status, payment_status, total,
+       buyer_country,
+       buyer_age,
        events ( title, starts_at, location ),
        reservation_items (
          quantity, unit_price, line_total,
          ticket_types ( name, price, badge_label )
        ),
-       attendees ( full_name, email, qr_code )`
+       attendees ( full_name, email, qr_code, created_at )`
     )
     .eq("id", reservationId)
     .eq("user_id", userId)

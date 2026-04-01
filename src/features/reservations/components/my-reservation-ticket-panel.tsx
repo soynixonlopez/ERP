@@ -59,16 +59,6 @@ export function MyReservationEntry({
             Tu entrada digital (mismo formato que valida el equipo en acceso)
           </p>
           {children}
-          <p className="text-center print:hidden">
-            <Link
-              href={inviteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-semibold text-[var(--epr-blue-800)] hover:underline"
-            >
-              Abrir ticket en pestaña nueva
-            </Link>
-          </p>
           {!paymentApproved ? (
             <p className="text-xs text-amber-800 print:hidden">
               El pago aun no figura como confirmado en el sistema; conserva este enlace. Si ya pagaste, espera la

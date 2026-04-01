@@ -38,7 +38,7 @@ export default async function InvitePage({ params }: InvitePageProps): Promise<J
     "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50";
 
   return (
-    <section className="mx-auto max-w-3xl print:max-w-none">
+    <section className="mx-auto w-full min-w-0 max-w-6xl px-1 sm:px-0 print:max-w-none">
       <nav
         className="mb-4 flex flex-wrap items-center gap-2 print:hidden"
         aria-label="Volver"

@@ -10,7 +10,11 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: "EPR Reservas",
-  description: "Plataforma multi-tenant de reservas de eventos y paquetes."
+  description: "Plataforma multi-tenant de reservas de eventos y paquetes.",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: "/favicon.svg"
+  }
 };
 
 type RootLayoutProps = Readonly<{

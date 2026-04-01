@@ -52,32 +52,42 @@ export async function POST(request: Request, { params }: RouteParams): Promise<N
     return NextResponse.json({ error: "No se pudo aprobar la reserva" }, { status: 500 });
   }
 
-  const qrToken = crypto.randomUUID();
-  const { error: attendeeError } = await supabase
+  const { data: attendeesNeedingQr, error: listErr } = await supabase
     .from("attendees")
-    .update({ qr_code: qrToken })
-    .eq("reservation_id", id)
-    .is("qr_code", null);
+    .select("id, qr_code")
+    .eq("reservation_id", id);
 
-  if (attendeeError) {
-    return NextResponse.json({ error: "Reserva aprobada, pero no se pudo generar QR" }, { status: 500 });
+  if (listErr) {
+    return NextResponse.json({ error: "Reserva aprobada, pero no se pudo preparar los codigos QR" }, { status: 500 });
+  }
+
+  for (const row of attendeesNeedingQr ?? []) {
+    if (row.qr_code) continue;
+    const token = `EPR-${crypto.randomUUID().replace(/-/g, "")}`;
+    const { error: upErr } = await supabase.from("attendees").update({ qr_code: token }).eq("id", row.id);
+    if (upErr) {
+      return NextResponse.json({ error: "Reserva aprobada, pero no se pudo generar QR" }, { status: 500 });
+    }
   }
 
   const { data: attendee } = await supabase
     .from("attendees")
     .select("qr_code")
     .eq("reservation_id", id)
+    .not("qr_code", "is", null)
     .limit(1)
     .maybeSingle();
 
-  const finalQrToken = attendee?.qr_code ?? qrToken;
-  await sendReservationConfirmedEmail({
-    to: reservation.buyer_email,
-    customerName: reservation.buyer_name,
-    reservationNumber: reservation.reservation_number,
-    eventTitle: (reservation.events as { title?: string } | null)?.title ?? "Evento",
-    qrToken: finalQrToken
-  });
+  const finalQrToken = attendee?.qr_code ?? "";
+  if (finalQrToken) {
+    await sendReservationConfirmedEmail({
+      to: reservation.buyer_email,
+      customerName: reservation.buyer_name,
+      reservationNumber: reservation.reservation_number,
+      eventTitle: (reservation.events as { title?: string } | null)?.title ?? "Evento",
+      qrToken: finalQrToken
+    });
+  }
 
   await supabase.from("audit_logs").insert({
     organization_id: parsed.data.organizationId,

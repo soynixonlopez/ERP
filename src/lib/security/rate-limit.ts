@@ -23,6 +23,7 @@ function buildLimiter(limit: number, window: `${number} s` | `${number} m` | `${
 
 export const authRateLimit = buildLimiter(15, "1 m");
 export const checkoutRateLimit = buildLimiter(20, "1 m");
+export const checkinGateRateLimit = buildLimiter(90, "1 m");
 export const webhookRateLimit = buildLimiter(120, "1 m");
 
 export async function enforceRateLimit(

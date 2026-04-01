@@ -11,31 +11,58 @@ export default async function AdminReservationsPage(): Promise<JSX.Element> {
   const { data } = await supabase
     .from("reservations")
     .select(
-      "id, organization_id, reservation_number, buyer_name, buyer_email, status, payment_status, total, created_at, events(title), reservation_items(quantity, ticket_types(name)), attendees(qr_code)"
+      "id, organization_id, reservation_number, buyer_name, buyer_email, buyer_country, buyer_age, status, payment_status, total, created_at, events(title), reservation_items(quantity, ticket_types(name)), attendees(full_name, email, qr_code, created_at)"
     )
     .eq("organization_id", EPR_ORGANIZATION_ID)
     .order("created_at", { ascending: false })
     .limit(100);
 
+  type AttendeeRow = {
+    full_name?: string | null;
+    email?: string | null;
+    qr_code?: string | null;
+    created_at?: string | null;
+  };
+
   const rows: AdminReservationRow[] =
-    data?.map((item) => ({
-      id: item.id as string,
-      organizationId: item.organization_id as string,
-      reservationNumber: item.reservation_number as string,
-      customerName: item.buyer_name as string,
-      email: item.buyer_email as string,
-      event: ((item.events as { title?: string } | null)?.title ?? "Evento") as string,
-      packageLabel: packageLabelFromItems(item.reservation_items as ReservationItemForLabel[] | null),
-      quantity: ((item.reservation_items as Array<{ quantity?: number }> | null)?.[0]?.quantity ?? 1) as number,
-      reservationStatus: item.status as string,
-      paymentStatus: item.payment_status as string,
-      total: Number(item.total),
-      createdAt: item.created_at as string,
-      qrCode:
-        ((item.attendees as Array<{ qr_code?: string | null }> | null)?.[0]?.qr_code ?? null) as
-          | string
-          | null
-    })) ?? [];
+    data?.map((item) => {
+      const attendees = (item.attendees as AttendeeRow[] | null) ?? [];
+      const byCreated = [...attendees].sort((a, b) =>
+        String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""))
+      );
+      const additionalPersonNames = byCreated
+        .filter((a) => a.email == null || String(a.email).trim() === "")
+        .map((a) => (typeof a.full_name === "string" ? a.full_name.trim() : ""))
+        .filter((n) => n.length > 0);
+      const firstQr = byCreated.find((a) => a.qr_code)?.qr_code ?? attendees.find((a) => a.qr_code)?.qr_code ?? null;
+      const ageRaw = item.buyer_age;
+      const buyerAge =
+        ageRaw != null && String(ageRaw).trim() !== "" && Number.isFinite(Number(ageRaw))
+          ? Number(ageRaw)
+          : null;
+
+      return {
+        id: item.id as string,
+        organizationId: item.organization_id as string,
+        reservationNumber: item.reservation_number as string,
+        customerName: item.buyer_name as string,
+        email: item.buyer_email as string,
+        event: ((item.events as { title?: string } | null)?.title ?? "Evento") as string,
+        packageLabel: packageLabelFromItems(item.reservation_items as ReservationItemForLabel[] | null),
+        quantity: ((item.reservation_items as Array<{ quantity?: number }> | null)?.[0]?.quantity ?? 1) as number,
+        reservationStatus: item.status as string,
+        paymentStatus: item.payment_status as string,
+        total: Number(item.total),
+        createdAt: item.created_at as string,
+        qrCode: firstQr as string | null,
+        buyerCountry:
+          item.buyer_country != null && String(item.buyer_country).trim() !== ""
+            ? String(item.buyer_country).trim()
+            : null,
+        buyerAge,
+        additionalPersonNames
+      };
+    }) ?? [];
 
   return (
     <section className="space-y-4">

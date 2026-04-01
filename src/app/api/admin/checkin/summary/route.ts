@@ -6,14 +6,16 @@ import { zPgUuid } from "@/lib/validations/zod-pg-uuid";
 
 const querySchema = z.object({
   organizationId: zPgUuid,
-  eventId: zPgUuid
+  eventId: zPgUuid,
+  controlDateUtc: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
 });
 
 export async function GET(request: Request): Promise<NextResponse> {
   const url = new URL(request.url);
   const parsed = querySchema.safeParse({
     organizationId: url.searchParams.get("organizationId"),
-    eventId: url.searchParams.get("eventId")
+    eventId: url.searchParams.get("eventId"),
+    controlDateUtc: url.searchParams.get("controlDateUtc") ?? undefined
   });
 
   if (!parsed.success) {
@@ -26,18 +28,25 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   const supabase = createSupabaseAdminClient();
+  const start = parsed.data.controlDateUtc ? `${parsed.data.controlDateUtc}T00:00:00.000Z` : null;
+  const end = parsed.data.controlDateUtc ? `${parsed.data.controlDateUtc}T23:59:59.999Z` : null;
 
-  const { count, error: countError } = await supabase
+  let countQuery = supabase
     .from("checkins")
     .select("*", { count: "exact", head: true })
     .eq("organization_id", parsed.data.organizationId)
     .eq("event_id", parsed.data.eventId);
+  if (start && end) {
+    countQuery = countQuery.gte("checked_in_at", start).lte("checked_in_at", end);
+  }
+
+  const { count, error: countError } = await countQuery;
 
   if (countError) {
     return NextResponse.json({ error: "No se pudo contar ingresos" }, { status: 500 });
   }
 
-  const { data: rows, error: recentError } = await supabase
+  let recentQuery = supabase
     .from("checkins")
     .select(
       `
@@ -53,6 +62,11 @@ export async function GET(request: Request): Promise<NextResponse> {
     .eq("event_id", parsed.data.eventId)
     .order("checked_in_at", { ascending: false })
     .limit(25);
+  if (start && end) {
+    recentQuery = recentQuery.gte("checked_in_at", start).lte("checked_in_at", end);
+  }
+
+  const { data: rows, error: recentError } = await recentQuery;
 
   if (recentError) {
     return NextResponse.json({ error: "No se pudo cargar el historial" }, { status: 500 });

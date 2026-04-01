@@ -114,6 +114,36 @@ small {
 
 @media print {
   @page {
-    margin: 12mm;
+    margin: 6mm 8mm;
+    size: A4 portrait;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /*
+   * Evitar pagina en blanco + ticket: no forzar todo el bloque en "avoid" (el navegador
+   * puede mandar el ticket entero a la pagina 2). Permitir flujo normal en una sola hoja.
+   */
+  .ticket-print-article {
+    break-inside: auto;
+    page-break-inside: auto;
+    max-width: 100% !important;
+  }
+
+  .ticket-print-article table {
+    font-size: 9pt;
+  }
+
+  .ticket-print-article th,
+  .ticket-print-article td {
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
   }
 }

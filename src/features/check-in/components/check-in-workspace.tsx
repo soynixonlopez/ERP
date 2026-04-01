@@ -21,11 +21,15 @@ type ScanApiRow = {
   message?: string;
   checkedInAt?: string;
   attendee?: {
+    id?: string;
     fullName?: string;
     email?: string | null;
     reservationNumber?: string;
     packageName?: string;
   };
+  partyNames?: string[];
+  buyerCountry?: string | null;
+  buyerAge?: number | null;
 };
 
 type SummaryRecent = {
@@ -35,7 +39,7 @@ type SummaryRecent = {
   reservationNumber: string;
 };
 
-type AttendanceRow = SummaryRecent;
+type AttendanceRow = SummaryRecent & { partyLabel?: string };
 
 type FeedItem = {
   id: string;
@@ -50,8 +54,23 @@ type CheckInWorkspaceProps = {
   events: CheckInEventOption[];
 };
 
+function localISODate(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parsePartyNames(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((x): x is string => typeof x === "string" && x.trim().length > 0);
+}
+
 export function CheckInWorkspace({ organizationId, events }: CheckInWorkspaceProps): JSX.Element {
   const [eventId, setEventId] = useState<string>(events[0]?.id ?? "");
+  /** Vacío = todo el historial del evento; YYYY-MM-DD = solo ese día (interpretación en UTC en servidor). */
+  const [controlDate, setControlDate] = useState("");
   const [manual, setManual] = useState("");
   const [cameraOff, setCameraOff] = useState(false);
   const [count, setCount] = useState<number | null>(null);
@@ -61,10 +80,19 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
   const [attendanceTruncated, setAttendanceTruncated] = useState(false);
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [busy, setBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [preview, setPreview] = useState<ScanApiRow | null>(null);
+  const [pendingRaw, setPendingRaw] = useState<string | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const lastScanRef = useRef<{ token: string; ts: number }>({ token: "", ts: 0 });
   const queueRef = useRef<string[]>([]);
   const drainRef = useRef(false);
+
+  const dateQuery = controlDate.trim() ? `&controlDateUtc=${encodeURIComponent(controlDate.trim())}` : "";
 
   const pushFeed = useCallback((item: Omit<FeedItem, "id" | "at">) => {
     const id = crypto.randomUUID();
@@ -75,7 +103,7 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
     if (!eventId) return;
     try {
       const res = await fetch(
-        `/api/admin/checkin/summary?organizationId=${encodeURIComponent(organizationId)}&eventId=${encodeURIComponent(eventId)}`,
+        `/api/admin/checkin/summary?organizationId=${encodeURIComponent(organizationId)}&eventId=${encodeURIComponent(eventId)}${dateQuery}`,
         { credentials: "same-origin" }
       );
       if (!res.ok) return;
@@ -85,14 +113,14 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
     } catch {
       /* ignorar */
     }
-  }, [eventId, organizationId]);
+  }, [eventId, organizationId, dateQuery]);
 
   const loadAttendanceList = useCallback(async () => {
     if (!eventId) return;
     setAttendanceLoading(true);
     try {
       const res = await fetch(
-        `/api/admin/checkin/attendance?organizationId=${encodeURIComponent(organizationId)}&eventId=${encodeURIComponent(eventId)}&limit=2000`,
+        `/api/admin/checkin/attendance?organizationId=${encodeURIComponent(organizationId)}&eventId=${encodeURIComponent(eventId)}&limit=2000${dateQuery}`,
         { credentials: "same-origin" }
       );
       if (!res.ok) return;
@@ -104,7 +132,7 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
     } finally {
       setAttendanceLoading(false);
     }
-  }, [eventId, organizationId]);
+  }, [eventId, organizationId, dateQuery]);
 
   useEffect(() => {
     void refreshSummary();
@@ -112,6 +140,76 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
     const t = setInterval(() => void refreshSummary(), 4500);
     return () => clearInterval(t);
   }, [refreshSummary, loadAttendanceList]);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setModalOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modalOpen]);
+
+  const closeModal = useCallback(() => {
+    setModalOpen(false);
+    setPreview(null);
+    setPendingRaw(null);
+  }, []);
+
+  const runConfirmCheckin = useCallback(async () => {
+    if (!eventId || !pendingRaw?.trim()) return;
+    setConfirmBusy(true);
+    try {
+      const res = await fetch("/api/admin/checkin/scan", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId, eventId, raw: pendingRaw })
+      });
+      const bodyUnknown = (await res.json()) as Record<string, unknown>;
+      if (!res.ok) {
+        const msg = typeof bodyUnknown.error === "string" ? bodyUnknown.error : res.statusText;
+        pushFeed({ kind: "error", title: "No se pudo registrar", detail: msg });
+        closeModal();
+        return;
+      }
+      const body = bodyUnknown as ScanApiRow;
+      const name = body.attendee?.fullName ?? "Asistente";
+      if (body.ok && body.code === "CHECKED_IN") {
+        pushFeed({
+          kind: "success",
+          title: `Ingreso: ${name}`,
+          detail: `${body.attendee?.packageName ?? ""} · ${body.attendee?.reservationNumber ?? ""}`.trim()
+        });
+        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(30);
+      } else if (body.ok && body.code === "ALREADY_CHECKED_IN") {
+        pushFeed({
+          kind: "warn",
+          title: `Ya ingreso: ${name}`,
+          detail: body.checkedInAt ? formatEventDate(body.checkedInAt) : undefined
+        });
+      } else {
+        pushFeed({
+          kind: "error",
+          title: body.message ?? "No valido",
+          detail: name !== "Asistente" ? name : undefined
+        });
+      }
+      void refreshSummary();
+      void loadAttendanceList();
+      closeModal();
+    } finally {
+      setConfirmBusy(false);
+    }
+  }, [
+    eventId,
+    pendingRaw,
+    organizationId,
+    pushFeed,
+    refreshSummary,
+    loadAttendanceList,
+    closeModal
+  ]);
 
   const submitRaw = useCallback(
     async (raw: string) => {
@@ -128,7 +226,7 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
 
       setBusy(true);
       try {
-        const res = await fetch("/api/admin/checkin/scan", {
+        const res = await fetch("/api/admin/checkin/preview", {
           method: "POST",
           credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
@@ -144,36 +242,32 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
 
         const body = bodyUnknown as ScanApiRow;
         const code = body.code;
-        const name = body.attendee?.fullName ?? "Asistente";
+        const partyNames = parsePartyNames(body.partyNames);
 
-        if (body.ok && code === "CHECKED_IN") {
-          pushFeed({
-            kind: "success",
-            title: `Ingreso: ${name}`,
-            detail: `${body.attendee?.packageName ?? ""} · ${body.attendee?.reservationNumber ?? ""}`.trim()
-          });
-          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(30);
-        } else if (body.ok && code === "ALREADY_CHECKED_IN") {
-          pushFeed({
-            kind: "warn",
-            title: `Ya ingreso: ${name}`,
-            detail: body.checkedInAt ? formatEventDate(body.checkedInAt) : undefined
-          });
-        } else {
+        if (
+          code === "READY_TO_CHECK_IN" ||
+          code === "ALREADY_CHECKED_IN" ||
+          code === "NOT_CONFIRMED"
+        ) {
+          setPreview({ ...body, partyNames });
+          setPendingRaw(raw);
+          setModalOpen(true);
+          return;
+        }
+
+        if (!body.ok) {
           pushFeed({
             kind: "error",
             title: body.message ?? "No valido",
-            detail: name !== "Asistente" ? name : undefined
+            detail: undefined
           });
+          return;
         }
-
-        void refreshSummary();
-        void loadAttendanceList();
       } finally {
         setBusy(false);
       }
     },
-    [eventId, organizationId, pushFeed, refreshSummary, loadAttendanceList]
+    [eventId, organizationId, pushFeed]
   );
 
   const drainQueue = useCallback(async () => {
@@ -216,9 +310,15 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
   const exportAttendanceCsv = useCallback(() => {
     if (!selected || attendance.length === 0) return;
     const esc = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
-    const header = ["Nombre", "Correo", "Reserva", "Ingreso"].join(",");
+    const header = ["Nombre", "Correo", "Reserva", "Grupo", "Ingreso"].join(",");
     const lines = attendance.map((r) =>
-      [esc(r.fullName), esc(r.email ?? ""), esc(r.reservationNumber), esc(formatEventDate(r.checkedInAt))].join(",")
+      [
+        esc(r.fullName),
+        esc(r.email ?? ""),
+        esc(r.reservationNumber),
+        esc(r.partyLabel ?? ""),
+        esc(formatEventDate(r.checkedInAt))
+      ].join(",")
     );
     const bom = "\uFEFF";
     const safeName = selected.title.replace(/[^\w\s-]+/g, "").trim().slice(0, 48) || "evento";
@@ -231,6 +331,45 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
     URL.revokeObjectURL(url);
   }, [attendance, selected]);
 
+  const resetControl = useCallback(async () => {
+    if (!eventId) return;
+    const label = controlDate.trim()
+      ? `los ingresos del ${controlDate.trim()} (UTC)`
+      : "todos los ingresos de este evento";
+    if (!window.confirm(`¿Reiniciar control? Se eliminarán ${label}. Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    setResetBusy(true);
+    try {
+      const res = await fetch("/api/admin/checkin/reset", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationId,
+          eventId,
+          ...(controlDate.trim() ? { controlDateUtc: controlDate.trim() } : {})
+        })
+      });
+      const j = (await res.json()) as { error?: string; deleted?: number };
+      if (!res.ok) {
+        pushFeed({ kind: "error", title: "No se pudo reiniciar", detail: j.error });
+        return;
+      }
+      pushFeed({
+        kind: "success",
+        title: "Control reiniciado",
+        detail: `Registros eliminados: ${typeof j.deleted === "number" ? j.deleted : "—"}`
+      });
+      void refreshSummary();
+      void loadAttendanceList();
+    } finally {
+      setResetBusy(false);
+    }
+  }, [eventId, organizationId, controlDate, pushFeed, refreshSummary, loadAttendanceList]);
+
+  const modalParty = preview?.partyNames?.length ? preview.partyNames : [];
+
   if (!events.length) {
     return (
       <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
@@ -242,37 +381,167 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
 
   return (
     <div className="flex min-w-0 flex-col gap-5 xl:flex-row xl:items-start xl:gap-6">
-      {/* Columna principal */}
+      {modalOpen && preview ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/55 p-0 sm:items-center sm:p-4"
+          role="presentation"
+          onClick={closeModal}
+        >
+          <div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="checkin-modal-title"
+            className="max-h-[min(92vh,720px)] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-slate-200 bg-white shadow-2xl sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4">
+              <h2 id="checkin-modal-title" className="text-lg font-black text-slate-900">
+                {preview.code === "READY_TO_CHECK_IN"
+                  ? "Entrada válida"
+                  : preview.code === "ALREADY_CHECKED_IN"
+                    ? "Ya registró ingreso"
+                    : preview.code === "NOT_CONFIRMED"
+                      ? "Reserva no lista"
+                      : "Detalle"}
+              </h2>
+              <p className="mt-1 text-xs text-slate-600">{preview.message}</p>
+            </div>
+            <div className="space-y-4 px-5 py-4 text-sm text-slate-800">
+              {preview.attendee ? (
+                <dl className="grid gap-3">
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <dt className="text-[10px] font-bold uppercase text-slate-500">Persona (esta entrada)</dt>
+                    <dd className="mt-1 font-semibold text-slate-900">{preview.attendee.fullName ?? "—"}</dd>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <dt className="text-[10px] font-bold uppercase text-slate-500">Correo</dt>
+                    <dd className="mt-1 break-words text-slate-800">{preview.attendee.email ?? "—"}</dd>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <dt className="text-[10px] font-bold uppercase text-slate-500">Reserva</dt>
+                    <dd className="mt-1 font-mono text-slate-900">{preview.attendee.reservationNumber ?? "—"}</dd>
+                  </div>
+                  {preview.attendee.packageName ? (
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <dt className="text-[10px] font-bold uppercase text-slate-500">Paquete</dt>
+                      <dd className="mt-1 font-medium text-slate-900">{preview.attendee.packageName}</dd>
+                    </div>
+                  ) : null}
+                  {modalParty.length > 1 ? (
+                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/90 p-3">
+                      <dt className="text-[10px] font-bold uppercase text-indigo-800">Grupo en la reserva</dt>
+                      <dd className="mt-2 flex flex-wrap gap-2">
+                        {modalParty.map((n, i) => (
+                          <span
+                            key={`${n}-${i}`}
+                            className="rounded-lg bg-white px-2 py-1 text-xs font-semibold text-indigo-950 shadow-sm ring-1 ring-indigo-100"
+                          >
+                            {n}
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {(preview.buyerCountry || preview.buyerAge != null) && (
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <dt className="text-[10px] font-bold uppercase text-slate-500">Comprador</dt>
+                      <dd className="mt-1 text-slate-800">
+                        {preview.buyerCountry ? <span className="font-medium">{preview.buyerCountry}</span> : null}
+                        {preview.buyerCountry && preview.buyerAge != null ? " · " : null}
+                        {preview.buyerAge != null ? (
+                          <span className="tabular-nums font-medium">{preview.buyerAge} años</span>
+                        ) : null}
+                      </dd>
+                    </div>
+                  )}
+                  {preview.code === "ALREADY_CHECKED_IN" && preview.checkedInAt ? (
+                    <p className="text-xs text-amber-900">
+                      Ingreso previo: <strong>{formatEventDate(preview.checkedInAt)}</strong>
+                    </p>
+                  ) : null}
+                </dl>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/80 px-5 py-4 sm:flex-row sm:justify-end">
+              <Button type="button" variant="secondary" onClick={closeModal} disabled={confirmBusy}>
+                Cerrar
+              </Button>
+              {preview.code === "READY_TO_CHECK_IN" ? (
+                <Button type="button" variant="accent" onClick={() => void runConfirmCheckin()} disabled={confirmBusy}>
+                  {confirmBusy ? "Registrando…" : "Registrar en lista de asistencia"}
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="min-w-0 flex-1 space-y-5">
-        {/* Evento + contador en una sola franja (sin repetir el nombre del evento) */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch sm:justify-between sm:gap-6">
-            <div className="min-w-0 flex-1">
-              <label className="text-sm font-semibold text-slate-800" htmlFor="checkin-event">
-                Evento activo
-              </label>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Todas las validaciones y el listado corresponden al evento elegido.
-              </p>
-              <select
-                id="checkin-event"
-                className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-white px-3 text-sm"
-                value={eventId}
-                onChange={(e) => setEventId(e.target.value)}
-              >
-                {events.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.title}
-                    {e.starts_at ? ` · ${formatEventDate(e.starts_at)}` : ""}
-                  </option>
-                ))}
-              </select>
-              {selected ? (
-                <p className="mt-2 text-xs text-slate-500">
-                  Catalogo: <span className="font-medium text-slate-700">{selected.status}</span> · solo reservas
-                  confirmadas y pagadas.
+            <div className="min-w-0 flex-1 space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-800" htmlFor="checkin-event">
+                  Evento activo
+                </label>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Todas las validaciones y el listado corresponden al evento elegido.
                 </p>
-              ) : null}
+                <select
+                  id="checkin-event"
+                  className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-white px-3 text-sm"
+                  value={eventId}
+                  onChange={(e) => setEventId(e.target.value)}
+                >
+                  {events.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.title}
+                      {e.starts_at ? ` · ${formatEventDate(e.starts_at)}` : ""}
+                    </option>
+                  ))}
+                </select>
+                {selected ? (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Catalogo: <span className="font-medium text-slate-700">{selected.status}</span> · solo reservas
+                    confirmadas y pagadas.
+                  </p>
+                ) : null}
+              </div>
+              <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3 sm:p-4">
+                <label className="text-sm font-semibold text-slate-800" htmlFor="checkin-date">
+                  Fecha del control (filtro)
+                </label>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Deje vacío para ver todo el historial del evento. La fecha se compara en UTC (mismo criterio que el
+                  reinicio parcial).
+                </p>
+                <div className="mt-2 flex flex-wrap items-end gap-2">
+                  <Input
+                    id="checkin-date"
+                    type="date"
+                    className="h-11 w-full max-w-[200px]"
+                    value={controlDate}
+                    onChange={(e) => setControlDate(e.target.value)}
+                  />
+                  <Button type="button" variant="secondary" size="sm" onClick={() => setControlDate("")}>
+                    Ver todo
+                  </Button>
+                  <Button type="button" variant="secondary" size="sm" onClick={() => setControlDate(localISODate())}>
+                    Hoy
+                  </Button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!eventId || resetBusy}
+                  onClick={() => void resetControl()}
+                >
+                  {resetBusy ? "Reiniciando…" : "Reiniciar control"}
+                </Button>
+              </div>
             </div>
             <div className="flex shrink-0 flex-col justify-center rounded-xl border border-slate-100 bg-slate-50 px-5 py-3 text-center sm:min-w-[9rem] sm:text-left">
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Personas dentro</p>
@@ -284,12 +553,11 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
           </div>
         </div>
 
-        {/* Validar: camara + manual en una sola tarjeta */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5">
             <h2 className="text-base font-bold text-slate-900">Validar entrada</h2>
             <p className="mt-0.5 text-xs text-slate-600">
-              Use la camara o pegue datos manualmente. Mismo criterio de validacion para ambos.
+              Tras leer el código se muestra una vista previa; confirme para registrar el ingreso (un QR = un solo uso).
             </p>
           </div>
 
@@ -358,7 +626,6 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
           </div>
         </div>
 
-        {/* Lista completa: colapsable para no alargar la pagina; altura acotada */}
         <details
           className="group rounded-2xl border border-slate-200 bg-white shadow-sm open:shadow-md"
           open
@@ -403,19 +670,20 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
               </p>
             ) : null}
             <div className="max-h-[min(420px,55vh)] overflow-auto rounded-lg border border-slate-200 [-webkit-overflow-scrolling:touch]">
-              <table className="w-full min-w-[560px] text-left text-xs sm:text-sm">
+              <table className="w-full min-w-[640px] text-left text-xs sm:text-sm">
                 <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-slate-600">
                   <tr>
                     <th className="px-3 py-2 font-semibold">Nombre</th>
                     <th className="px-3 py-2 font-semibold">Correo</th>
                     <th className="px-3 py-2 font-semibold">Reserva</th>
+                    <th className="px-3 py-2 font-semibold">Grupo</th>
                     <th className="whitespace-nowrap px-3 py-2 font-semibold">Ingreso</th>
                   </tr>
                 </thead>
                 <tbody>
                   {attendance.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-3 py-8 text-center text-slate-500">
+                      <td colSpan={5} className="px-3 py-8 text-center text-slate-500">
                         {attendanceLoading ? "Cargando…" : "Sin ingresos aun para este evento."}
                       </td>
                     </tr>
@@ -425,6 +693,9 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
                         <td className="px-3 py-2 font-medium text-slate-900">{r.fullName}</td>
                         <td className="px-3 py-2 text-slate-600 break-words">{r.email ?? "—"}</td>
                         <td className="px-3 py-2 font-mono text-slate-800">{r.reservationNumber}</td>
+                        <td className="max-w-[200px] px-3 py-2 text-slate-600 break-words text-xs">
+                          {r.partyLabel || "—"}
+                        </td>
                         <td className="whitespace-nowrap px-3 py-2 text-slate-600">{formatEventDate(r.checkedInAt)}</td>
                       </tr>
                     ))
@@ -436,7 +707,6 @@ export function CheckInWorkspace({ organizationId, events }: CheckInWorkspacePro
         </details>
       </div>
 
-      {/* Panel lateral: solo actividad de esta sesion (no duplica la lista del servidor) */}
       <aside className="flex w-full min-w-0 shrink-0 flex-col gap-4 xl:w-[300px] xl:max-w-[320px]">
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
           <h2 className="text-sm font-bold text-slate-900">Actividad (esta pestana)</h2>

@@ -22,10 +22,13 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const rawBody =
       body && typeof body === "object" && !Array.isArray(body) ? (body as Record<string, unknown>) : {};
+    const guestRaw = Array.isArray(rawBody.guestNames) ? rawBody.guestNames : [];
     const parsed = checkoutSchema.safeParse({
       ...rawBody,
       buyerName: sanitizeText(String(rawBody.buyerName ?? "")),
-      buyerPhone: sanitizeText(String(rawBody.buyerPhone ?? ""))
+      buyerPhone: sanitizeText(String(rawBody.buyerPhone ?? "")),
+      buyerCountry: sanitizeText(String(rawBody.buyerCountry ?? "")),
+      guestNames: guestRaw.map((g: unknown) => sanitizeText(String(g ?? "")))
     });
 
     if (!parsed.success) {
@@ -44,6 +47,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "Debes iniciar sesion" }, { status: 401 });
     }
 
+    const guests =
+      parsed.data.quantity > 1 ? parsed.data.guestNames.map((n) => sanitizeText(n)) : [];
+
     const { data, error } = await supabase.rpc("create_reservation", {
       p_organization_id: parsed.data.organizationId,
       p_user_id: user.id,
@@ -52,7 +58,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       p_quantity: parsed.data.quantity,
       p_buyer_name: parsed.data.buyerName,
       p_buyer_email: parsed.data.buyerEmail,
-      p_buyer_phone: parsed.data.buyerPhone
+      p_buyer_phone: parsed.data.buyerPhone,
+      p_buyer_country: parsed.data.buyerCountry,
+      p_buyer_age: parsed.data.buyerAge,
+      p_guest_names: guests
     });
 
     if (error) {

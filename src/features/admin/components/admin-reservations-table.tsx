@@ -23,6 +23,10 @@ export type AdminReservationRow = {
   total: number;
   createdAt: string;
   qrCode: string | null;
+  buyerCountry: string | null;
+  buyerAge: number | null;
+  /** Invitados / acompañantes (asistentes sin correo en BD, típicamente filas creadas tras el titular). */
+  additionalPersonNames: string[];
 };
 
 function rowMatchesQuery(row: AdminReservationRow, raw: string): boolean {
@@ -55,7 +59,10 @@ function rowMatchesQuery(row: AdminReservationRow, raw: string): boolean {
     createdLong,
     row.createdAt,
     String(row.quantity),
-    row.total.toFixed(2)
+    row.total.toFixed(2),
+    row.buyerCountry ?? "",
+    row.buyerAge != null ? String(row.buyerAge) : "",
+    ...row.additionalPersonNames
   ].map((s) => String(s).toLowerCase());
 
   const tokens = q.split(/\s+/).filter(Boolean);
@@ -82,9 +89,47 @@ const columns: ColumnDef<AdminReservationRow>[] = [
   },
   { accessorKey: "customerName", header: "Cliente" },
   { accessorKey: "email", header: "Correo" },
+  {
+    id: "buyerCountry",
+    header: "País",
+    accessorFn: (r) => r.buyerCountry ?? "",
+    cell: ({ row }) => (
+      <span className="text-slate-700">{row.original.buyerCountry?.trim() || "—"}</span>
+    )
+  },
+  {
+    id: "buyerAge",
+    header: "Edad",
+    accessorFn: (r) => (r.buyerAge != null ? r.buyerAge : ""),
+    cell: ({ row }) => (
+      <span className="tabular-nums text-slate-700">
+        {row.original.buyerAge != null ? `${row.original.buyerAge} años` : "—"}
+      </span>
+    )
+  },
   { accessorKey: "event", header: "Evento" },
   { accessorKey: "packageLabel", header: "Paquete" },
   { accessorKey: "quantity", header: "Cantidad" },
+  {
+    id: "additionalPersons",
+    header: "Personas adicionales",
+    enableSorting: false,
+    cell: ({ row }) => {
+      const names = row.original.additionalPersonNames;
+      if (!names.length) {
+        return <span className="text-xs text-slate-400">—</span>;
+      }
+      return (
+        <ul className="m-0 max-w-[14rem] list-none space-y-1 p-0 text-sm text-slate-800">
+          {names.map((name, i) => (
+            <li key={`${name}-${i}`} className="border-b border-slate-100 pb-1 last:border-0 last:pb-0">
+              {name}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+  },
   { accessorKey: "reservationStatus", header: "Estado reserva" },
   { accessorKey: "paymentStatus", header: "Estado pago" },
   { accessorKey: "total", header: "Total USD" },

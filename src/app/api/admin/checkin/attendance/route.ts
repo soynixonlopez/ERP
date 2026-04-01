@@ -7,8 +7,15 @@ import { zPgUuid } from "@/lib/validations/zod-pg-uuid";
 const querySchema = z.object({
   organizationId: zPgUuid,
   eventId: zPgUuid,
-  limit: z.coerce.number().int().min(1).max(5000).optional()
+  limit: z.coerce.number().int().min(1).max(5000).optional(),
+  controlDateUtc: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
 });
+
+type PartyRow = { full_name?: string | null };
+type ResWithParty = {
+  reservation_number?: string;
+  attendees?: PartyRow[] | null;
+};
 
 type CheckinRow = {
   checked_in_at: string;
@@ -16,12 +23,12 @@ type CheckinRow = {
     | {
         full_name?: string;
         email?: string | null;
-        reservations?: { reservation_number?: string } | { reservation_number?: string }[] | null;
+        reservations?: ResWithParty | ResWithParty[] | null;
       }
     | {
         full_name?: string;
         email?: string | null;
-        reservations?: { reservation_number?: string } | { reservation_number?: string }[] | null;
+        reservations?: ResWithParty | ResWithParty[] | null;
       }[]
     | null;
 };
@@ -30,12 +37,18 @@ function mapCheckinRow(row: CheckinRow) {
   const att = row.attendees;
   const a = Array.isArray(att) ? att[0] : att;
   const res = a?.reservations;
-  const resNum = Array.isArray(res) ? res[0]?.reservation_number : res?.reservation_number;
+  const r = Array.isArray(res) ? res[0] : res;
+  const resNum = r?.reservation_number;
+  const party = (r?.attendees ?? [])
+    .map((x) => (typeof x?.full_name === "string" ? x.full_name.trim() : ""))
+    .filter(Boolean);
+  const partyLabel = party.length > 1 ? party.join(" · ") : "";
   return {
     checkedInAt: row.checked_in_at,
     fullName: a?.full_name ?? "—",
     email: a?.email ?? null,
-    reservationNumber: resNum ?? "—"
+    reservationNumber: resNum ?? "—",
+    partyLabel
   };
 }
 
@@ -45,7 +58,8 @@ export async function GET(request: Request): Promise<NextResponse> {
   const parsed = querySchema.safeParse({
     organizationId: url.searchParams.get("organizationId"),
     eventId: url.searchParams.get("eventId"),
-    limit: url.searchParams.get("limit") ?? undefined
+    limit: url.searchParams.get("limit") ?? undefined,
+    controlDateUtc: url.searchParams.get("controlDateUtc") ?? undefined
   });
 
   if (!parsed.success) {
@@ -59,8 +73,10 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   const limit = parsed.data.limit ?? 2000;
   const supabase = createSupabaseAdminClient();
+  const start = parsed.data.controlDateUtc ? `${parsed.data.controlDateUtc}T00:00:00.000Z` : null;
+  const end = parsed.data.controlDateUtc ? `${parsed.data.controlDateUtc}T23:59:59.999Z` : null;
 
-  const { data: rows, error } = await supabase
+  let listQuery = supabase
     .from("checkins")
     .select(
       `
@@ -68,7 +84,10 @@ export async function GET(request: Request): Promise<NextResponse> {
       attendees (
         full_name,
         email,
-        reservations ( reservation_number )
+        reservations (
+          reservation_number,
+          attendees ( full_name )
+        )
       )
     `
     )
@@ -76,6 +95,11 @@ export async function GET(request: Request): Promise<NextResponse> {
     .eq("event_id", parsed.data.eventId)
     .order("checked_in_at", { ascending: false })
     .limit(limit);
+  if (start && end) {
+    listQuery = listQuery.gte("checked_in_at", start).lte("checked_in_at", end);
+  }
+
+  const { data: rows, error } = await listQuery;
 
   if (error) {
     return NextResponse.json({ error: "No se pudo cargar la lista de asistencia" }, { status: 500 });

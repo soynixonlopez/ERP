@@ -20,6 +20,7 @@ type AttendeeEmbed = {
   qr_code: string | null;
   full_name: string;
   email: string | null;
+  created_at?: string;
 };
 
 type ReservationWithRelations = {
@@ -29,6 +30,8 @@ type ReservationWithRelations = {
   payment_status: string;
   total: number;
   created_at: string;
+  buyer_country: string | null;
+  buyer_age: number | null;
   events: { title: string; starts_at?: string; location?: string } | { title: string }[] | null;
   reservation_items: ReservationItemForLabel[] | null;
   attendees: AttendeeEmbed[] | null;
@@ -45,13 +48,19 @@ function slugForFile(reservationNumber: string): string {
 }
 
 function toReservationEmbed(row: ReservationWithRelations): ReservationEmbedForTicket {
+  const party = [...(row.attendees ?? [])].sort((a, b) =>
+    String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""))
+  );
   return {
     reservation_number: row.reservation_number,
     status: row.status,
     payment_status: row.payment_status,
     total: row.total,
+    buyer_country: row.buyer_country,
+    buyer_age: row.buyer_age,
     events: row.events as ReservationEmbedForTicket["events"],
-    reservation_items: row.reservation_items as ReservationEmbedForTicket["reservation_items"]
+    reservation_items: row.reservation_items as ReservationEmbedForTicket["reservation_items"],
+    attendees: party.map((a) => ({ full_name: a.full_name, created_at: a.created_at }))
   };
 }
 
@@ -75,6 +84,8 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
       payment_status,
       total,
       created_at,
+      buyer_country,
+      buyer_age,
       events ( title, starts_at, location ),
       reservation_items (
         quantity,
@@ -82,7 +93,7 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
         line_total,
         ticket_types ( name, price, badge_label )
       ),
-      attendees ( id, qr_code, full_name, email )
+      attendees ( id, qr_code, full_name, email, created_at )
     `
     )
     .eq("user_id", user.id)
@@ -90,7 +101,7 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
 
   if (error) {
     return (
-      <section className="mx-auto w-full max-w-3xl space-y-4 print:hidden">
+      <section className="mx-auto w-full max-w-6xl space-y-4 print:hidden">
         <p className="text-sm text-red-600">
           No se pudieron cargar las reservas. Verifica que la base de datos tenga las políticas actualizadas.
         </p>
@@ -102,7 +113,7 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
   const baseUrl = getAppBaseUrl();
 
   return (
-    <section className="mx-auto w-full max-w-3xl space-y-6 print:max-w-none print:space-y-0">
+    <section className="mx-auto w-full max-w-6xl space-y-6 print:max-w-none print:space-y-0">
       <div className="print:hidden">
         <div className="relative inline-block">
           <h1 className="text-4xl font-black tracking-tight text-[var(--epr-blue-800)]">Mis reservas</h1>
@@ -128,17 +139,6 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
               const packageLabel = packageLabelFromItems(reservation.reservation_items);
               const showQr =
                 reservation.status === "confirmed" && reservation.payment_status === "paid";
-              const firstWithQr = reservation.attendees?.find((a) => a.qr_code);
-              const firstAttendee = firstWithQr ?? reservation.attendees?.[0];
-              const ticketData =
-                firstAttendee?.qr_code && firstAttendee.full_name
-                  ? inviteTicketDataFromReservationAndAttendee(toReservationEmbed(reservation), {
-                      full_name: firstAttendee.full_name,
-                      email: firstAttendee.email,
-                      qr_code: firstAttendee.qr_code
-                    })
-                  : null;
-              const inviteUrl = ticketData ? `${baseUrl}/invite/${ticketData.qrToken}` : "";
 
               const summary = (
                 <>
@@ -154,6 +154,16 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
                     <p className="text-xs text-slate-600">
                       Paquete: <span className="font-medium text-slate-800">{packageLabel}</span>
                     </p>
+                    {reservation.buyer_country || reservation.buyer_age != null ? (
+                      <p className="text-xs text-slate-600">
+                        Comprador:{" "}
+                        <span className="font-medium text-slate-800">
+                          {reservation.buyer_country ? `${reservation.buyer_country}` : ""}
+                          {reservation.buyer_country && reservation.buyer_age != null ? " · " : ""}
+                          {reservation.buyer_age != null ? `${reservation.buyer_age} años` : ""}
+                        </span>
+                      </p>
+                    ) : null}
                     <p className="text-base font-semibold text-slate-800">
                       Total: ${Number(reservation.total).toFixed(2)}
                     </p>
@@ -161,28 +171,51 @@ export default async function MyReservationsPage(): Promise<JSX.Element> {
                 </>
               );
 
+              const attendeesWithQr = (reservation.attendees ?? []).filter((a) => a.qr_code);
+              const ticketBlocks =
+                showQr && attendeesWithQr.length > 0
+                  ? attendeesWithQr.map((att) => {
+                      const td = inviteTicketDataFromReservationAndAttendee(toReservationEmbed(reservation), {
+                        full_name: att.full_name,
+                        email: att.email,
+                        qr_code: att.qr_code as string
+                      });
+                      const url = `${baseUrl}/invite/${td.qrToken}`;
+                      return { att, td, url };
+                    })
+                  : [];
+
               return (
                 <li
                   key={reservation.id}
                   className={
-                    index < rows.length - 1 ? "print:break-after-page" : undefined
+                    rows.length > 1 && index < rows.length - 1 ? "print:break-after-page" : undefined
                   }
                 >
                   <Card className="rounded-2xl print:border-0 print:bg-transparent print:shadow-none">
-                    <CardContent className="space-y-4 p-5 print:p-0">
-                      {ticketData ? (
+                    <CardContent className="space-y-4 p-4 sm:p-5 print:space-y-0 print:p-0">
+                      {ticketBlocks.length > 0 ? (
                         <MyReservationEntry
                           summary={summary}
                           reservationNumber={reservation.reservation_number}
                           paymentApproved={showQr}
-                          inviteUrl={inviteUrl}
+                          inviteUrl={ticketBlocks[0]?.url ?? null}
                         >
-                          <InviteTicketArticle
-                            data={ticketData}
-                            invitationUrl={inviteUrl}
-                            fileSlug={slugForFile(reservation.reservation_number)}
-                            articleId={`ticket-${reservation.id}`}
-                          />
+                          <div className="space-y-8 print:space-y-6">
+                            {ticketBlocks.map(({ att, td, url }, ti) => (
+                              <div key={att.id} className="space-y-3 border-t border-slate-100 pt-6 first:border-t-0 first:pt-0">
+                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500 print:hidden">
+                                  Entrada {ti + 1} de {ticketBlocks.length} · {att.full_name}
+                                </p>
+                                <InviteTicketArticle
+                                  data={td}
+                                  invitationUrl={url}
+                                  fileSlug={`${slugForFile(reservation.reservation_number)}-${ti + 1}`}
+                                  articleId={`ticket-${reservation.id}-${att.id}`}
+                                />
+                              </div>
+                            ))}
+                          </div>
                         </MyReservationEntry>
                       ) : (
                         <>

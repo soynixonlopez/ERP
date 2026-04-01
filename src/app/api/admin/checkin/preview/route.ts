@@ -7,7 +7,7 @@ import { parseReservationCheckInSuffix } from "@/lib/reservations/reservation-ac
 import { zPgUuid } from "@/lib/validations/zod-pg-uuid";
 import { checkinGateRateLimit, enforceRateLimit } from "@/lib/security/rate-limit";
 
-const scanBodySchema = z.object({
+const bodySchema = z.object({
   organizationId: zPgUuid,
   eventId: zPgUuid,
   raw: z.string().min(1).max(4000)
@@ -15,13 +15,13 @@ const scanBodySchema = z.object({
 
 export async function POST(request: Request): Promise<NextResponse> {
   const ip = request.headers.get("x-forwarded-for") ?? "local";
-  const limitResult = await enforceRateLimit(checkinGateRateLimit, `checkin-scan:${ip}`);
+  const limitResult = await enforceRateLimit(checkinGateRateLimit, `checkin-preview:${ip}`);
   if (!limitResult.success) {
-    return NextResponse.json({ error: "Demasiadas validaciones. Espere un momento." }, { status: 429 });
+    return NextResponse.json({ error: "Demasiadas solicitudes de vista previa. Espere un momento." }, { status: 429 });
   }
 
   const json = await request.json().catch(() => null);
-  const parsed = scanBodySchema.safeParse(json);
+  const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: "Payload invalido" }, { status: 400 });
   }
@@ -38,11 +38,10 @@ export async function POST(request: Request): Promise<NextResponse> {
   let error: { message?: string } | null;
 
   if (token) {
-    const res = await supabase.rpc("gate_register_checkin_by_qr", {
+    const res = await supabase.rpc("gate_preview_checkin_by_qr", {
       p_organization_id: parsed.data.organizationId,
       p_event_id: parsed.data.eventId,
-      p_qr_token: token,
-      p_scanned_by: actor.userId
+      p_qr_token: token
     });
     data = res.data;
     error = res.error;
@@ -58,11 +57,10 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 400 }
       );
     }
-    const res = await supabase.rpc("gate_register_checkin_by_reservation_suffix", {
+    const res = await supabase.rpc("gate_preview_checkin_by_reservation_suffix", {
       p_organization_id: parsed.data.organizationId,
       p_event_id: parsed.data.eventId,
-      p_suffix: suffix,
-      p_scanned_by: actor.userId
+      p_suffix: suffix
     });
     data = res.data;
     error = res.error;
@@ -70,7 +68,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   if (error) {
     return NextResponse.json(
-      { ok: false, code: "SERVER", message: error.message ?? "Error al registrar ingreso" },
+      { ok: false, code: "SERVER", message: error.message ?? "Error al validar" },
       { status: 500 }
     );
   }
